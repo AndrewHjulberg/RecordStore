@@ -27,8 +27,8 @@ router.post("/login", async (req, res) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(400).json({ error: "Wrong password" });
 
-  const token = jwt.sign({ userId: user.id }, "your_secret");
-  res.json({ token });
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+  res.json({ token })
 });
 
 export default router;
