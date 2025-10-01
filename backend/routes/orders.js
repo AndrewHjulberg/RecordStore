@@ -49,4 +49,27 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token provided" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    console.log("Decoded JWT:", decoded);
+    console.log("Filtering orders for userId:", decoded.userId);
+
+    const orders = await prisma.order.findMany({
+      where: { userId: decoded.userId },
+      include: { listing: true }, // include record details
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(403).json({ error: "Invalid token", details: err.message });
+  }
+});
+
 export default router;
