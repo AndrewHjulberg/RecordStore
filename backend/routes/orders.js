@@ -72,4 +72,37 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Cancel an order
+router.delete("/:id", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token provided" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const orderId = parseInt(req.params.id);
+
+    // Ensure the order belongs to the logged-in user
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (order.userId !== decoded.userId)
+      return res.status(403).json({ error: "Cannot cancel someone else's order" });
+
+    // Option 1: Delete the order
+    await prisma.order.delete({ where: { id: orderId } });
+
+    // Option 2 (preferred): Mark as cancelled
+    // await prisma.order.update({
+    //   where: { id: orderId },
+    //   data: { status: "CANCELLED" },
+    // });
+
+    res.json({ message: "Order cancelled successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(403).json({ error: "Invalid token", details: err.message });
+  }
+});
+
+
+
 export default router;
