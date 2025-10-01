@@ -13,15 +13,20 @@ function Home() {
   }, []);
 
   const handleBuy = async (listingId) => {
+
+    const userId = localStorage.getItem("userId"); // fetch real user
+    const token = localStorage.getItem("token");   // for JWT auth later
+
     try {
       const res = await fetch("http://localhost:5000/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`, // <-- send JWT
         },
         body: JSON.stringify({
           listingId,
-          userId: 1, // temp until JWT auth
+          userId // temp until JWT auth
         }),
       });
 

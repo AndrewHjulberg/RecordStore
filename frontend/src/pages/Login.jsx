@@ -1,4 +1,62 @@
-// src/pages/Login.jsx
-export default function Login() {
-  return <h1>Login Page</h1>;
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("http://localhost:5000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userId", data.userId);
+        setMessage("✅ Login successful!");
+        navigate("/"); // redirect to home
+      } else {
+        setMessage("❌ " + data.error);
+      }
+    } catch (err) {
+      setMessage("❌ Something went wrong");
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: "400px", margin: "auto", padding: "20px" }}>
+      <h2>Login</h2>
+      <form onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ display: "block", width: "100%", margin: "10px 0", padding: "10px" }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          style={{ display: "block", width: "100%", margin: "10px 0", padding: "10px" }}
+        />
+        <button type="submit" style={{ padding: "10px", width: "100%" }}>
+          Login
+        </button>
+      </form>
+      {message && <p>{message}</p>}
+    </div>
+  );
 }
+
+export default Login;
