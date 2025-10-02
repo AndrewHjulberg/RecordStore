@@ -5,18 +5,25 @@ import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || "devsecret"; // make sure this is the same everywhere
 
 // Signup
 router.post("/signup", async (req, res) => {
   const { email, password } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.create({
-    data: { email, password: hashed },
-  });
+  try {
+    const user = await prisma.user.create({ data: { email, password } });
 
-  res.json({ id: user.id, email: user.email });
+    // ✅ Sign a JWT
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
+
+    res.json({ token, userId: user.id });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: "Signup failed" });
+  }
 });
+
 
 // Login
 router.post("/login", async (req, res) => {

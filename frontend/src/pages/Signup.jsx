@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Signup() {
+function Signup({ setIsLoggedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
+
     try {
       const res = await fetch("http://localhost:5000/auth/signup", {
         method: "POST",
@@ -17,43 +17,36 @@ function Signup() {
       });
 
       const data = await res.json();
+
       if (res.ok) {
-        setMessage("✅ Signup successful! You can now log in.");
-        navigate("/login");
+        localStorage.setItem("token", data.token);
+        setIsLoggedIn(true); // ✅ update navbar state
+        navigate("/orders");
       } else {
-        setMessage("❌ " + data.error);
+        alert(data.error || "Signup failed");
       }
     } catch (err) {
-      setMessage("❌ Something went wrong");
+      console.error(err);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "auto", padding: "20px" }}>
-      <h2>Signup</h2>
-      <form onSubmit={handleSignup}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ display: "block", width: "100%", margin: "10px 0", padding: "10px" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ display: "block", width: "100%", margin: "10px 0", padding: "10px" }}
-        />
-        <button type="submit" style={{ padding: "10px", width: "100%" }}>
-          Signup
-        </button>
-      </form>
-      {message && <p>{message}</p>}
-    </div>
+    <form onSubmit={handleSignup}>
+      <h1>Signup</h1>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+      />
+      <button type="submit">Signup</button>
+    </form>
   );
 }
 
