@@ -14,7 +14,6 @@ model User {
   isAdmin  Boolean @default(false)
   role      String    @default("customer")
   createdAt DateTime  @default(now())
-  listings  Listing[] @relation("UserListings")
   orders    Order[]
 }
 
@@ -26,9 +25,7 @@ model Listing {
   condition String
   imageUrl  String?
   createdAt DateTime @default(now())
-  sellerId  Int
-  seller    User     @relation("UserListings", fields: [sellerId], references: [id])
-  orders    Order[]
+  orders Order[]
 }
 
 model Order {

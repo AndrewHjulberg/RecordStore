@@ -1,9 +1,11 @@
 // routes/listings.js
 import express from "express";
 import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ✅ Middleware to check admin
 function requireAdmin(req, res, next) {
