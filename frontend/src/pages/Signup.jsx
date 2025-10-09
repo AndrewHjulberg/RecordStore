@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Signup({ setIsLoggedIn }) {
+function Signup({ setIsLoggedIn, setUser }) { // <-- add setUser prop
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -20,8 +20,13 @@ function Signup({ setIsLoggedIn }) {
 
       if (res.ok) {
         localStorage.setItem("token", data.token);
-        setIsLoggedIn(true); // ✅ update navbar state
-        navigate("/orders");
+
+        // Decode JWT to get user info
+        const decoded = JSON.parse(atob(data.token.split(".")[1]));
+
+        setUser(decoded);           // <-- set user state
+        setIsLoggedIn(true);        // <-- update navbar state
+        navigate("/orders");        // redirect
       } else {
         alert(data.error || "Signup failed");
       }

@@ -1,41 +1,64 @@
+// routes/auth.js
 import express from "express";
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-const prisma = new PrismaClient();
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "devsecret"; // make sure this is the same everywhere
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Signup
 router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, isAdmin } = req.body;
+  
 
   try {
-    const user = await prisma.user.create({ data: { email, password } });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        isAdmin: isAdmin || false, // default to false
+      },
+    });
 
-    // ✅ Sign a JWT
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    res.json({ token, userId: user.id });
+    res.json({ token });
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Signup failed" });
+    res.status(500).json({ error: "Signup failed" });
   }
 });
 
-
-// Login
+// routes/auth.js
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user) return res.status(400).json({ error: "User not found" });
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) return res.status(400).json({ error: "Wrong password" });
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
-  res.json({ token })
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid)
+      return res.status(401).json({ error: "Invalid credentials" });
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin }, // ✅ include isAdmin
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Login failed" });
+  }
 });
+
 
 export default router;
