@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get all orders for logged-in user
+// GET all orders for logged-in user
 router.get("/", async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "No token provided" });
@@ -60,38 +60,52 @@ router.get("/", async (req, res) => {
 
     const orders = await prisma.order.findMany({
       where: { userId: decoded.userId },
-      include: { items: { include: { listing: true } } },
+      include: {
+        items: {
+          include: { listing: true } // include listing details in each order item
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    res.json(orders);
+    res.json(Array.isArray(orders) ? orders : []);
   } catch (err) {
     console.error(err);
-    res.status(403).json({ error: "Invalid token" });
+    res.status(403).json({ error: "Invalid token", details: err.message });
   }
 });
 
-// Cancel an order
+
+
 router.delete("/:id", async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "No token provided" });
+  const token = req.headers.authorization?.split(" ")[1]; // ✅ extract token
+  if (!token) return res.status(401).json({ error: "Missing token" });
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId; // ✅ or decoded.userId depending on how you sign the token
+
     const orderId = parseInt(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) return res.status(404).json({ error: "Order not found" });
-    if (order.userId !== decoded.userId)
-      return res.status(403).json({ error: "Cannot cancel someone else's order" });
+    if (!order || order.userId !== userId) {
+      return res.status(403).json({ error: "Not authorized to delete this order" });
+    }
 
+    // Delete order items first
+    await prisma.orderItem.deleteMany({ where: { orderId } });
+    // Then delete the order
     await prisma.order.delete({ where: { id: orderId } });
 
-    res.json({ message: "Order cancelled successfully" });
+    res.json({ message: "Order deleted successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(403).json({ error: "Invalid token" });
+    console.error("Error deleting order:", err);
+    res.status(500).json({ error: "Failed to delete order" });
   }
 });
+
+
 
 export default router;
