@@ -1,10 +1,13 @@
 // src/pages/Cart.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
 
@@ -50,7 +53,12 @@ function Cart() {
     }
   };
 
-  // Checkout
+  const handleProceedToCheckout = async () => {
+    navigate("/checkout");
+  }
+
+  // Checkout 
+  // Should be moved to new checkout page
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       setMessage("🛒 Your cart is empty.");
@@ -112,10 +120,10 @@ function Cart() {
 
           <h3>Total: ${totalPrice.toFixed(2)}</h3>
           <button
-            onClick={handleCheckout}
+            onClick={handleProceedToCheckout}
             style={{ padding: "10px 20px", background: "#007bff", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
           >
-            Checkout
+            Proceed to Checkout
           </button>
         </>
       )}

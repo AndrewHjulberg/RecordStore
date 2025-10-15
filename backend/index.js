@@ -6,6 +6,7 @@ import listingsRoutes from "./routes/listings.js";
 import adminRoutes from "./routes/admin.js";
 import ordersRoutes from "./routes/orders.js";
 import cartsRoutes from "./routes/carts.js";
+import checkoutRoutes from "./routes/checkout.js";
 
 
 dotenv.config();
@@ -19,6 +20,7 @@ app.use("/listings", listingsRoutes);
 app.use("/auth", authRoutes);
 app.use("/orders", ordersRoutes);
 app.use("/carts", cartsRoutes);
+app.use("/checkout", checkoutRoutes);
 
 
 // test route
