@@ -12,29 +12,30 @@ function Home() {
       .catch((err) => console.error("Error fetching listings:", err));
   }, []);
 
-  const handleBuy = async (listingId) => {
+  // ✅ Adds item to cart instead of placing order
+  const handleAddToCart = async (listingId) => {
+    const token = localStorage.getItem("token");
 
-    const userId = localStorage.getItem("userId"); // fetch real user
-    const token = localStorage.getItem("token");   // for JWT auth later
+    if (!token) {
+      setMessage("❌ Please log in to add items to your cart.");
+      return;
+    }
 
     try {
-      const res = await fetch("http://localhost:5000/orders", {
+      const res = await fetch("http://localhost:5000/carts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // <-- send JWT
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          listingId,
-          userId // temp until JWT auth
-        }),
+        body: JSON.stringify({ listingId }),
       });
 
       if (res.ok) {
-        setMessage("✅ Order placed successfully!");
+        setMessage("✅ Added to cart!");
       } else {
         const error = await res.json();
-        setMessage("❌ Error placing order: " + error.error);
+        setMessage("❌ Error adding to cart: " + error.error);
       }
     } catch (err) {
       console.error("Error:", err);
@@ -98,7 +99,7 @@ function Home() {
               Condition: {listing.condition}
             </p>
             <button
-              onClick={() => handleBuy(listing.id)}
+              onClick={() => handleAddToCart(listing.id)}
               style={{
                 backgroundColor: "#007bff",
                 color: "#fff",
@@ -109,7 +110,7 @@ function Home() {
                 width: "100%",
               }}
             >
-              Buy Now
+              Add to Cart
             </button>
           </div>
         ))}

@@ -15,6 +15,7 @@ model User {
   role      String    @default("customer")
   createdAt DateTime  @default(now())
   orders    Order[]
+  cartItems CartItem[]
 }
 
 model Listing {
@@ -25,14 +26,35 @@ model Listing {
   condition String
   imageUrl  String?
   createdAt DateTime @default(now())
-  orders Order[]
+  cartItems CartItem[]
+  orderItems OrderItem[]  
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  listingId Int
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model Order {
   id        Int      @id @default(autoincrement())
   userId    Int
+  totalPrice Float   @default(0.0)
+  status    String   @default("pending")
+  shippingAddress String?
   createdAt DateTime @default(now())
-  listingId Int
-  listing   Listing  @relation(fields: [listingId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  listingId Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  price     Float
 }

@@ -7,30 +7,30 @@ function Orders() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-
-      const token = localStorage.getItem("token"); // token saved at login
+      const token = localStorage.getItem("token");
 
       if (!token) {
-      console.log("No token yet, skipping fetch");
-      setLoading(false);
-      return;
-    }
+        console.log("No token yet, skipping fetch");
+        setLoading(false);
+        return;
+      }
 
       try {
         const res = await fetch("http://localhost:5000/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         const data = await res.json();
 
         if (Array.isArray(data)) {
           setOrders(data);
         } else {
           console.warn("Unexpected response from /orders:", data);
-          setOrders([]); // fallback to empty list
+          setOrders([]);
         }
       } catch (err) {
         console.error("Error fetching orders:", err);
-        setOrders([]);
+        setError("Failed to load orders.");
       } finally {
         setLoading(false);
       }
@@ -40,6 +40,7 @@ function Orders() {
   }, []);
 
   if (loading) return <p>Loading orders...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   const handleCancel = async (orderId) => {
     const token = localStorage.getItem("token");
@@ -52,10 +53,7 @@ function Orders() {
       });
 
       if (res.ok) {
-        // Use functional update to avoid stale state
-        setOrders((prevOrders) =>
-          prevOrders.filter((order) => order.id !== orderId)
-        );
+        setOrders((prevOrders) => prevOrders.filter((order) => order.id !== orderId));
       } else {
         const error = await res.json();
         alert("Error cancelling order: " + error.error);
@@ -72,13 +70,7 @@ function Orders() {
       {orders.length === 0 ? (
         <p>No orders yet.</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-            gap: "20px",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {orders.map((order) => (
             <div
               key={order.id}
@@ -89,21 +81,54 @@ function Orders() {
                 backgroundColor: "#fff",
               }}
             >
-              <img
-                src={order.listing?.imageUrl}
-                alt={order.listing?.title || "Record"}
-                style={{ width: "100%", height: "150px", objectFit: "cover" }}
-              />
-              <h3>{order.listing?.title}</h3>
-              <p>{order.listing?.artist}</p>
+              <h2>Order #{order.id}</h2>
+              <p>Status: {order.status}</p>
               <p>
-                <strong>${order.listing?.price}</strong>
+                <strong>Total:</strong> ${order.totalPrice?.toFixed(2) || "0.00"}
               </p>
               <p style={{ fontSize: "12px", color: "#888" }}>
                 Ordered on: {new Date(order.createdAt).toLocaleString()}
               </p>
 
-              {/* Cancel button */}
+              <h3 style={{ marginTop: "15px" }}>Items:</h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: "10px",
+                  marginTop: "10px",
+                }}
+              >
+                {order.orderItems?.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      border: "1px solid #eee",
+                      borderRadius: "6px",
+                      padding: "10px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <img
+                      src={item.listing?.imageUrl}
+                      alt={item.listing?.title || "Record"}
+                      style={{
+                        width: "100%",
+                        height: "120px",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                        marginBottom: "8px",
+                      }}
+                    />
+                    <strong>{item.listing?.title}</strong>
+                    <p style={{ margin: "5px 0", color: "#555" }}>
+                      {item.listing?.artist}
+                    </p>
+                    <p style={{ color: "#333" }}>${item.listing?.price}</p>
+                  </div>
+                ))}
+              </div>
+
               <button
                 onClick={() => handleCancel(order.id)}
                 style={{
@@ -113,7 +138,7 @@ function Orders() {
                   padding: "8px 12px",
                   borderRadius: "4px",
                   cursor: "pointer",
-                  marginTop: "10px",
+                  marginTop: "15px",
                 }}
               >
                 Cancel Order
