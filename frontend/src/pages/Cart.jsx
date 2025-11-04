@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [message, setMessage] = useState("");
@@ -17,9 +16,7 @@ function Cart() {
 
     try {
       const res = await fetch("http://localhost:5000/carts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setCartItems(data);
@@ -53,36 +50,41 @@ function Cart() {
     }
   };
 
+  // Stripe checkout
   const handleProceedToCheckout = async () => {
-    navigate("/checkout");
-  }
-
-  // Checkout 
-  // Should be moved to new checkout page
-  const handleCheckout = async () => {
     if (cartItems.length === 0) {
       setMessage("🛒 Your cart is empty.");
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/orders", {
+      const res = await fetch("http://localhost:5000/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          // You can collect shipping info here if desired
+          fullName: "Customer Name",
+          address: "123 Main St",
+          city: "City",
+          state: "State",
+          zip: "12345",
+        }),
       });
-      if (res.ok) {
-        setMessage("✅ Order placed successfully!");
-        setCartItems([]);
+
+      const data = await res.json();
+
+      if (data.url) {
+        // Redirect to Stripe hosted checkout
+        window.location.href = data.url;
       } else {
-        const err = await res.json();
-        setMessage("❌ " + (err.error || "Checkout failed"));
+        setMessage("❌ Failed to create checkout session.");
       }
     } catch (err) {
       console.error(err);
-      setMessage("❌ Something went wrong.");
+      setMessage("❌ Something went wrong with checkout.");
     }
   };
 
