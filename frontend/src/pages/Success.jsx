@@ -8,44 +8,45 @@ function Success() {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    // Get session_id from query string
-    const params = new URLSearchParams(location.search);
-    const sessionId = params.get("session_id");
+  const params = new URLSearchParams(location.search);
+  const sessionId = params.get("session_id");
 
-    if (!sessionId) {
-      setMessage("❌ No session found.");
-      return;
-    }
+  if (!sessionId) {
+    setMessage("❌ No session found.");
+    return;
+  }
 
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    // Optionally fetch order details from backend using sessionId
-    const fetchOrder = async () => {
-      try {
-        const res = await fetch(`http://localhost:5000/orders`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  const fetchOrder = async () => {
+    try {
+      // Retry a few times in case webhook hasn’t finished
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await fetch(`http://localhost:5000/orders/session/${sessionId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const data = await res.json();
-
-        if (Array.isArray(data) && data.length > 0) {
-          // Find the most recent order (or match by Stripe session metadata if stored)
-          const recentOrder = data[data.length - 1];
-          setOrder(recentOrder);
+        if (res.ok) {
+          const data = await res.json();
+          setOrder(data);
           setMessage("✅ Your order was successful!");
-        } else {
-          setMessage("✅ Payment successful! Your order will appear soon.");
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        setMessage("✅ Payment successful! Unable to fetch order details.");
-      }
-    };
 
-    fetchOrder();
-  }, [location]);
+        // Wait 2 seconds and retry
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      setMessage("✅ Payment successful! Your order will appear soon.");
+    } catch (err) {
+      console.error(err);
+      setMessage("✅ Payment successful! Unable to fetch order details.");
+    }
+  };
+
+  fetchOrder();
+}, [location]);
+
 
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
