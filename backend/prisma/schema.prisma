@@ -22,6 +22,7 @@ model Listing {
   id        Int      @id @default(autoincrement())
   title     String
   artist    String
+  genre     String?
   price     Int
   condition String
   imageUrl  String?
