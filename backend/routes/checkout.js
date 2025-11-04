@@ -46,7 +46,7 @@ export const createCheckoutSession = async (req, res) => {
       mode: "payment",
       line_items: lineItems,
       success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: "http://localhost:5173/cart",
+      cancel_url: "http://localhost:5173/cancel",
       metadata: { userId: String(userId), fullName, address, city, state, zip },
     });
 

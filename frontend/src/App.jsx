@@ -6,6 +6,7 @@ import Signup from "./pages/Signup";
 import Orders from "./pages/Orders";
 import Cart from "./pages/Cart";
 import Success from "./pages/Success";
+import Cancel from "./pages/Cancel";
 // import Checkout from "./pages/Checkout"; // ❌ no longer needed
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./ProtectedRoute";
@@ -69,6 +70,7 @@ function App() {
         <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
         <Route path="/success" element={<Success />} />
+        <Route path="/cancel" element={<Cancel />} />
         {/* <Route path="/checkout" element={<Checkout />} /> ❌ removed */}
         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
       </Routes>
