@@ -26,11 +26,11 @@ function requireAdmin(req, res, next) {
 
 // ✅ POST route to add a listing
 router.post("/", requireAdmin, async (req, res) => {
-  const { title, artist, price, condition, imageUrl } = req.body;
+  const { title, artist, genre, price, condition, imageUrl } = req.body;
 
   try {
     const listing = await prisma.listing.create({
-      data: { title, artist, price: parseFloat(price), condition, imageUrl },
+      data: { title, artist, genre, price: parseFloat(price), condition, imageUrl },
     });
     res.json(listing);
   } catch (err) {
