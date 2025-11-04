@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import { useEffect, useState } from "react";
 
 function Home() {
@@ -8,6 +7,7 @@ function Home() {
   const [genre, setGenre] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [sortOption, setSortOption] = useState(""); // ✅ new
 
   // Fetch listings with optional filters
   const fetchListings = async () => {
@@ -31,7 +31,7 @@ function Home() {
     fetchListings();
   }, [search, genre, minPrice, maxPrice]);
 
-  // ✅ Adds item to cart
+  // ✅ Add to Cart function
   const handleAddToCart = async (listingId) => {
     const token = localStorage.getItem("token");
 
@@ -62,6 +62,22 @@ function Home() {
     }
   };
 
+  // ✅ Apply sorting client-side
+  const sortedListings = [...listings].sort((a, b) => {
+    switch (sortOption) {
+      case "priceLowHigh":
+        return a.price - b.price;
+      case "priceHighLow":
+        return b.price - a.price;
+      case "titleAZ":
+        return a.title.localeCompare(b.title);
+      case "artistAZ":
+        return a.artist.localeCompare(b.artist);
+      default:
+        return 0;
+    }
+  });
+
   return (
     <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
       <h1 style={{ textAlign: "center", marginBottom: "30px" }}>🎵 Record Store</h1>
@@ -80,7 +96,7 @@ function Home() {
         </div>
       )}
 
-      {/* Search + Filters */}
+      {/* Search + Filters + Sort */}
       <div
         style={{
           display: "flex",
@@ -88,6 +104,7 @@ function Home() {
           gap: "10px",
           marginBottom: "20px",
           justifyContent: "center",
+          alignItems: "center",
         }}
       >
         <input
@@ -146,6 +163,23 @@ function Home() {
             width: "100px",
           }}
         />
+
+        {/* ✅ Sort dropdown */}
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          style={{
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+          }}
+        >
+          <option value="">Sort by</option>
+          <option value="priceLowHigh">Price: Low → High</option>
+          <option value="priceHighLow">Price: High → Low</option>
+          <option value="titleAZ">Title: A → Z</option>
+          <option value="artistAZ">Artist: A → Z</option>
+        </select>
       </div>
 
       {/* Listings grid */}
@@ -156,8 +190,8 @@ function Home() {
           gap: "20px",
         }}
       >
-        {listings.length > 0 ? (
-          listings.map((listing) => (
+        {sortedListings.length > 0 ? (
+          sortedListings.map((listing) => (
             <div
               key={listing.id}
               style={{
