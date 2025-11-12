@@ -7,7 +7,8 @@ function Home() {
   const [genre, setGenre] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [sortOption, setSortOption] = useState(""); // ✅ new
+  const [sortOption, setSortOption] = useState("");
+  const [selectedListing, setSelectedListing] = useState(null); // ✅ for modal
 
   // Fetch listings with optional filters
   const fetchListings = async () => {
@@ -52,6 +53,7 @@ function Home() {
 
       if (res.ok) {
         setMessage("✅ Added to cart!");
+        setSelectedListing(null); // ✅ Close modal after adding to cart
       } else {
         const error = await res.json();
         setMessage("❌ Error adding to cart: " + error.error);
@@ -77,6 +79,13 @@ function Home() {
         return 0;
     }
   });
+
+  // ✅ Close modal on Escape
+  useEffect(() => {
+    const handleEscape = (e) => e.key === "Escape" && setSelectedListing(null);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
 
   return (
     <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
@@ -164,7 +173,6 @@ function Home() {
           }}
         />
 
-        {/* ✅ Sort dropdown */}
         <select
           value={sortOption}
           onChange={(e) => setSortOption(e.target.value)}
@@ -182,7 +190,7 @@ function Home() {
         </select>
       </div>
 
-      {/* Listings grid */}
+      {/* Listings Grid */}
       <div
         style={{
           display: "grid",
@@ -194,13 +202,18 @@ function Home() {
           sortedListings.map((listing) => (
             <div
               key={listing.id}
+              onClick={() => setSelectedListing(listing)}
               style={{
                 border: "1px solid #ddd",
                 borderRadius: "8px",
                 padding: "15px",
                 backgroundColor: "#fff",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+                transition: "transform 0.2s",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
             >
               <img
                 src={listing.imageUrl}
@@ -212,9 +225,7 @@ function Home() {
                   borderRadius: "5px",
                 }}
               />
-              <h2 style={{ fontSize: "18px", margin: "10px 0 5px" }}>
-                {listing.title}
-              </h2>
+              <h2 style={{ fontSize: "18px", margin: "10px 0 5px" }}>{listing.title}</h2>
               <p style={{ margin: "0 0 5px", color: "#555" }}>{listing.artist}</p>
               {listing.genre && (
                 <p style={{ margin: "0 0 5px", color: "#777" }}>
@@ -224,29 +235,109 @@ function Home() {
               <p style={{ margin: "0 0 5px" }}>
                 <strong>${listing.price}</strong>
               </p>
-              <p style={{ margin: "0 0 10px", fontStyle: "italic", color: "#888" }}>
+              <p style={{ margin: "0", fontStyle: "italic", color: "#888" }}>
                 Condition: {listing.condition}
               </p>
-              <button
-                onClick={() => handleAddToCart(listing.id)}
-                style={{
-                  backgroundColor: "#007bff",
-                  color: "#fff",
-                  border: "none",
-                  padding: "10px 15px",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  width: "100%",
-                }}
-              >
-                Add to Cart
-              </button>
             </div>
           ))
         ) : (
           <p style={{ textAlign: "center" }}>No listings found.</p>
         )}
       </div>
+
+      {/* ✅ Popup Modal */}
+      {selectedListing && (
+        <div
+          onClick={() => setSelectedListing(null)} // click background to close
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            animation: "fadeIn 0.3s ease",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+            style={{
+              backgroundColor: "white",
+              padding: "30px",
+              borderRadius: "10px",
+              boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+              maxWidth: "400px",
+              textAlign: "center",
+              animation: "slideUp 0.3s ease",
+            }}
+          >
+            <img
+              src={selectedListing.imageUrl}
+              alt={selectedListing.title}
+              style={{
+                width: "100%",
+                height: "250px",
+                objectFit: "cover",
+                borderRadius: "8px",
+                marginBottom: "15px",
+              }}
+            />
+            <h2>{selectedListing.title}</h2>
+            <p>{selectedListing.artist}</p>
+            {selectedListing.genre && <p><em>{selectedListing.genre}</em></p>}
+            <p><strong>${selectedListing.price}</strong></p>
+            <p>Condition: {selectedListing.condition}</p>
+            <button
+              onClick={() => handleAddToCart(selectedListing.id)}
+              style={{
+                marginTop: "10px",
+                backgroundColor: "#007bff",
+                color: "#fff",
+                border: "none",
+                padding: "10px 15px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              Add to Cart
+            </button>
+            <button
+              onClick={() => setSelectedListing(null)}
+              style={{
+                marginTop: "10px",
+                backgroundColor: "#ddd",
+                border: "none",
+                padding: "8px 15px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Animations */}
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+        `}
+      </style>
     </div>
   );
 }

@@ -45,6 +45,9 @@ export const createCheckoutSession = async (req, res) => {
       payment_method_types: ["card"],
       mode: "payment",
       line_items: lineItems,
+      shipping_address_collection: {
+      allowed_countries: ["US"],
+      },
       success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: "http://localhost:5173/cancel",
       metadata: { userId: String(userId), fullName, address, city, state, zip },
@@ -72,16 +75,30 @@ export const stripeWebhook = async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
-    console.error("Webhook signature error:", err.message);
+    console.error("❌ Webhook signature error:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Handle successful payment
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const userId = parseInt(session.metadata.userId);
-    const { fullName, address, city, state, zip } = session.metadata;
 
-    // Fetch cart items linked to this Stripe session
+    // ✅ Prefer Stripe-collected shipping info, fallback to metadata
+    const shipping = session.shipping || {};
+    const customerDetails = session.customer_details || {};
+    const fullName =
+      shipping?.name ||
+      customerDetails?.name ||
+      session.metadata?.fullName ||
+      "Unknown";
+    const addressObj = shipping?.address || customerDetails?.address || {};
+    const address = addressObj.line1 || session.metadata?.address || "";
+    const city = addressObj.city || session.metadata?.city || "";
+    const state = addressObj.state || session.metadata?.state || "";
+    const zip = addressObj.postal_code || session.metadata?.zip || "";
+
+    // Fetch cart items linked to this session
     const cartItems = await prisma.cartItem.findMany({
       where: { stripeSessionId: session.id },
       include: { listing: true },
@@ -90,7 +107,7 @@ export const stripeWebhook = async (req, res) => {
     if (cartItems.length > 0) {
       const totalPrice = cartItems.reduce((sum, item) => sum + item.listing.price, 0);
 
-      // Create order
+      // ✅ Create order including real shipping info
       await prisma.order.create({
         data: {
           userId,
@@ -107,15 +124,18 @@ export const stripeWebhook = async (req, res) => {
         },
       });
 
-      // Clear cart
+      // Clear the user's cart
       await prisma.cartItem.deleteMany({ where: { stripeSessionId: session.id } });
 
-      console.log(`✅ Order created for user ${userId}`);
+      console.log(`✅ Order created for user ${userId} with shipping: ${fullName}, ${address}, ${city}, ${state} ${zip}`);
+    } else {
+      console.warn(`⚠️ No cart items found for session ${session.id}`);
     }
   }
 
   res.json({ received: true });
 };
+
 
 // --- Optional router for normal usage ---
 router.post("/", createCheckoutSession);
