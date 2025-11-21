@@ -1,11 +1,16 @@
+console.log("CHECKOUT.JS LOADING");
+
 import express from "express";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
 
+//console.log(process.env.STRIPE_SECRET_KEY);
+
 const router = express.Router();
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 
 // --- Create Stripe checkout session handler ---
 export const createCheckoutSession = async (req, res) => {

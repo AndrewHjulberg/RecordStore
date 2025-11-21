@@ -1,6 +1,11 @@
-import express from "express";
-import cors from "cors";
+
+
 import dotenv from "dotenv";
+dotenv.config();
+console.log("STRIPE_SECRET_KEY at startup:", process.env.STRIPE_SECRET_KEY);
+console.log("DATABASE_URL at startup:", process.env.DATABASE_URL);
+import cors from "cors";
+import express from "express";
 import authRoutes from "./routes/auth.js";
 import listingsRoutes from "./routes/listings.js";
 import adminRoutes from "./routes/admin.js";
@@ -8,7 +13,6 @@ import ordersRoutes from "./routes/orders.js";
 import cartsRoutes from "./routes/carts.js";
 import checkoutRoutes, { stripeWebhook } from "./routes/checkout.js";
 
-dotenv.config();
 const app = express();
 
 // ✅ CORS
