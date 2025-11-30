@@ -77,7 +77,7 @@ function App() {
           }}
         >
           {/* ⭐ Updated: Home remains / but SHOP is its own dedicated page */}
-          <Link to="/home" style={linkStyle}>Home</Link>
+          <Link to="/" style={linkStyle}>Home</Link>
           <Link to="/shop" style={linkStyle}>Shop</Link>
 
           {isLoggedIn && <Link to="/cart" style={linkStyle}>Cart</Link>}
@@ -102,7 +102,7 @@ function App() {
       {/* Routes */}
       <Routes>
         {/* Home still exists */}
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
 
         {/* ⭐ NEW SHOP PAGE ROUTE */}
         <Route path="/shop" element={<Shop />} />
