@@ -24,6 +24,9 @@ model Listing {
   artist    String
   genre     String?
   price     Int
+  featured  Boolean @default(false)
+  onSale    Boolean @default(false)
+  salePrice Int?
   condition String
   imageUrl  String?
   createdAt DateTime @default(now())

@@ -24,14 +24,25 @@ function requireAdmin(req, res, next) {
   }
 }
 
-// ✅ POST route to add a listing
+// ✅ POST route to add a listing (INT-friendly)
 router.post("/", requireAdmin, async (req, res) => {
-  const { title, artist, genre, price, condition, imageUrl } = req.body;
+  const { title, artist, genre, price, condition, imageUrl, featured, onSale, salePrice } = req.body;
 
   try {
     const listing = await prisma.listing.create({
-      data: { title, artist, genre, price: parseFloat(price), condition, imageUrl },
+      data: {
+        title,
+        artist,
+        genre,
+        price: parseInt(price),            // <-- INT
+        condition,
+        imageUrl,
+        featured: !!featured,
+        onSale: !!onSale,
+        salePrice: onSale ? parseInt(salePrice) : null, // <-- INT or NULL
+      },
     });
+
     res.json(listing);
   } catch (err) {
     console.error(err);
@@ -39,11 +50,9 @@ router.post("/", requireAdmin, async (req, res) => {
   }
 });
 
-
-
-// GET /listings?search=beatles&genre=rock&minPrice=10&maxPrice=50
+// GET /listings (unchanged)
 router.get("/", async (req, res) => {
-  const { search, genre, minPrice, maxPrice } = req.query;
+  const { search, genre, minPrice, maxPrice, featured, onSale } = req.query;
 
   try {
     const listings = await prisma.listing.findMany({
@@ -60,6 +69,8 @@ router.get("/", async (req, res) => {
           genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
           minPrice ? { price: { gte: parseInt(minPrice) } } : {},
           maxPrice ? { price: { lte: parseInt(maxPrice) } } : {},
+          featured !== undefined ? { featured: featured === "true" } : {},
+          onSale !== undefined ? { onSale: onSale === "true" } : {},
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -73,6 +84,3 @@ router.get("/", async (req, res) => {
 });
 
 export default router;
-
-
-

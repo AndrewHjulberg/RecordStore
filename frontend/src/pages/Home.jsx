@@ -10,7 +10,6 @@ function Home() {
   const [sortOption, setSortOption] = useState("");
   const [selectedListing, setSelectedListing] = useState(null);
 
-  // Fetch listings
   const fetchListings = async () => {
     try {
       const params = new URLSearchParams();
@@ -67,15 +66,46 @@ function Home() {
     }
   });
 
+  const featuredListings = sortedListings.filter(l => l.featured).slice(0, 4);
+  const onSaleListings = sortedListings.filter(l => l.onSale).slice(0, 4);
+
   useEffect(() => {
     const handleEscape = (e) => e.key === "Escape" && setSelectedListing(null);
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
+  const renderListingCard = (listing, isOnSale = false) => (
+    <div key={listing.id} style={{
+      border: "1px solid #eee", borderRadius: "10px", padding: "15px",
+      textAlign: "center", backgroundColor: "#f9f9f9"
+    }}>
+      <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
+        <img src={listing.imageUrl} alt={listing.title} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
+      </div>
+      <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
+      <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
+      {listing.genre && <p style={{ margin: "5px 0", fontStyle: "italic", color: "#777" }}>{listing.genre}</p>}
+      <p style={{ margin: "5px 0", fontWeight: "bold" }}>
+        {isOnSale && listing.salePrice
+          ? <>
+              <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>${listing.price}</span>
+              <span>${listing.salePrice}</span>
+            </>
+          : <>${listing.price}</>
+        }
+      </p>
+      <button
+        onClick={() => setSelectedListing(listing)}
+        style={{ marginTop: "10px", padding: "8px 12px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
+      >
+        View Record
+      </button>
+    </div>
+  );
+
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
-      {/* Message */}
       {message && (
         <div style={{ marginBottom: "20px", padding: "10px", background: "#f0f0f0", borderRadius: "5px" }}>
           {message}
@@ -106,24 +136,19 @@ function Home() {
         </div>
       </section>
 
-      {/* Featured Records */}
-      <section id="shop" style={{ padding: "40px 0" }}>
+      {/* Featured Finds */}
+      <section style={{ padding: "40px 0" }}>
         <h3 style={{ fontSize: "2rem", textAlign: "center", marginBottom: "40px" }}>Featured Finds</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "25px" }}>
-          {sortedListings.length > 0 ? sortedListings.map(listing => (
-            <div key={listing.id} style={{
-              border: "1px solid #eee", borderRadius: "10px", padding: "15px",
-              textAlign: "center", backgroundColor: "#f9f9f9", cursor: "pointer"
-            }} onClick={() => setSelectedListing(listing)}>
-              <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
-                <img src={listing.imageUrl} alt={listing.title} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
-              </div>
-              <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
-              <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
-              {listing.genre && <p style={{ margin: "5px 0", fontStyle: "italic", color: "#777" }}>{listing.genre}</p>}
-              <p style={{ margin: "5px 0", fontWeight: "bold" }}>${listing.price}</p>
-            </div>
-          )) : <p style={{ textAlign: "center" }}>No listings found.</p>}
+          {featuredListings.length > 0 ? featuredListings.map(renderListingCard) : <p style={{ textAlign: "center" }}>No featured listings.</p>}
+        </div>
+      </section>
+
+      {/* On Sale */}
+      <section style={{ padding: "40px 0" }}>
+        <h3 style={{ fontSize: "2rem", textAlign: "center", marginBottom: "40px" }}>On Sale</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "25px" }}>
+          {onSaleListings.length > 0 ? onSaleListings.map(listing => renderListingCard(listing, true)) : <p style={{ textAlign: "center" }}>No on sale listings.</p>}
         </div>
       </section>
 
@@ -149,7 +174,15 @@ function Home() {
             <h2>{selectedListing.title}</h2>
             <p>{selectedListing.artist}</p>
             {selectedListing.genre && <p><em>{selectedListing.genre}</em></p>}
-            <p><strong>${selectedListing.price}</strong></p>
+            <p>
+              {selectedListing.onSale && selectedListing.salePrice
+                ? <>
+                    <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>${selectedListing.price}</span>
+                    <span>${selectedListing.salePrice}</span>
+                  </>
+                : <>${selectedListing.price}</>
+              }
+            </p>
             <p>Condition: {selectedListing.condition}</p>
             <button
               onClick={() => handleAddToCart(selectedListing.id)}
