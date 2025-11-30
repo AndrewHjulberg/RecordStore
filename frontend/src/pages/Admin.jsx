@@ -6,6 +6,7 @@ function Admin() {
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [genre, setGenre] = useState("");
   const [message, setMessage] = useState("");
 
   const handleSubmit = async (e) => {
@@ -23,12 +24,17 @@ function Admin() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, artist, price, condition, imageUrl }),
+        body: JSON.stringify({ title, artist, price, condition, imageUrl, genre }),
       });
 
       if (res.ok) {
         setMessage("✅ Listing created successfully!");
-        setTitle(""); setArtist(""); setPrice(""); setCondition(""); setImageUrl("");
+        setTitle("");
+        setArtist("");
+        setPrice("");
+        setCondition("");
+        setImageUrl("");
+        setGenre("");
       } else {
         const error = await res.json();
         setMessage("❌ Error: " + error.error);
@@ -44,13 +50,62 @@ function Admin() {
       <h1>🛠 Admin: Add New Listing</h1>
       {message && <p>{message}</p>}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px" }}>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
-        <input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Artist" required />
-        <input value={price} type="number" onChange={(e) => setPrice(e.target.value)} placeholder="Price" required />
-        <input value={condition} onChange={(e) => setCondition(e.target.value)} placeholder="Condition" required />
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL" required />
-        <button type="submit" style={{ padding: "10px", background: "#007bff", color: "#fff", border: "none", borderRadius: "5px" }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          maxWidth: "400px",
+        }}
+      >
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          required
+        />
+        <input
+          value={artist}
+          onChange={(e) => setArtist(e.target.value)}
+          placeholder="Artist"
+          required
+        />
+        <input
+          value={genre}
+          onChange={(e) => setGenre(e.target.value)}
+          placeholder="Genre"
+          required
+        />
+        <input
+          value={price}
+          type="number"
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Price"
+          required
+        />
+        <input
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          placeholder="Condition"
+          required
+        />
+        <input
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          placeholder="Image URL"
+          required
+        />
+        <button
+          type="submit"
+          style={{
+            padding: "10px",
+            background: "#007bff",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+          }}
+        >
           Add Listing
         </button>
       </form>

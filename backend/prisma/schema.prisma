@@ -22,6 +22,7 @@ model Listing {
   id        Int      @id @default(autoincrement())
   title     String
   artist    String
+  genre     String?
   price     Int
   condition String
   imageUrl  String?
@@ -36,6 +37,7 @@ model CartItem {
   listingId Int
   listing   Listing  @relation(fields: [listingId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+  stripeSessionId String?
   createdAt DateTime @default(now())
 }
 
@@ -45,6 +47,7 @@ model Order {
   totalPrice Float   @default(0.0)
   status    String   @default("pending")
   shippingAddress String?
+  stripeSessionId String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   items OrderItem[]

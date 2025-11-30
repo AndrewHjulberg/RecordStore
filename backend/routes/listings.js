@@ -26,11 +26,11 @@ function requireAdmin(req, res, next) {
 
 // ✅ POST route to add a listing
 router.post("/", requireAdmin, async (req, res) => {
-  const { title, artist, price, condition, imageUrl } = req.body;
+  const { title, artist, genre, price, condition, imageUrl } = req.body;
 
   try {
     const listing = await prisma.listing.create({
-      data: { title, artist, price: parseFloat(price), condition, imageUrl },
+      data: { title, artist, genre, price: parseFloat(price), condition, imageUrl },
     });
     res.json(listing);
   } catch (err) {
@@ -39,17 +39,40 @@ router.post("/", requireAdmin, async (req, res) => {
   }
 });
 
-// GET all listings
+
+
+// GET /listings?search=beatles&genre=rock&minPrice=10&maxPrice=50
 router.get("/", async (req, res) => {
+  const { search, genre, minPrice, maxPrice } = req.query;
+
   try {
-    const listings = await prisma.listing.findMany();
+    const listings = await prisma.listing.findMany({
+      where: {
+        AND: [
+          search
+            ? {
+                OR: [
+                  { title: { contains: search, mode: "insensitive" } },
+                  { artist: { contains: search, mode: "insensitive" } },
+                ],
+              }
+            : {},
+          genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
+          minPrice ? { price: { gte: parseInt(minPrice) } } : {},
+          maxPrice ? { price: { lte: parseInt(maxPrice) } } : {},
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
     res.json(listings);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Failed to fetch listings" });
   }
 });
 
 export default router;
+
 
 
