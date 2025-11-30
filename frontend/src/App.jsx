@@ -7,7 +7,6 @@ import Orders from "./pages/Orders";
 import Cart from "./pages/Cart";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
-// import Checkout from "./pages/Checkout"; // ❌ no longer needed
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -38,31 +37,45 @@ function App() {
     navigate("/login");
   };
 
+  const linkStyle = {
+    textDecoration: "none",
+    color: "#000",
+    cursor: "pointer"
+  };
+
   return (
-    <div>
-      <nav style={{ padding: "1rem", background: "#222", display: "flex", gap: "1rem" }}>
-        <Link to="/" style={{ color: "white" }}>Home</Link>
+    <div style={{ fontFamily: "Arial, sans-serif" }}>
+      {/* Nav Bar */}
+      <header style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "20px 50px",
+        borderBottom: "1px solid #ddd"
+      }}>
+        <h1 style={{ fontFamily: "Impact, sans-serif", fontSize: "2.5rem", letterSpacing: "2px" }}>
+          VINYLVERSE
+        </h1>
+        <nav style={{ display: "flex", gap: "25px", textTransform: "uppercase", fontSize: "0.9rem" }}>
+          <Link to="/" style={linkStyle}>Shop</Link>
+          {isLoggedIn && <Link to="/cart" style={linkStyle}>Cart</Link>}
+          {isLoggedIn && <Link to="/orders" style={linkStyle}>Orders</Link>}
+          <Link to="/about" style={linkStyle}>About</Link>
+          <Link to="/contact" style={linkStyle}>Contact</Link>
+          {user?.isAdmin && <Link to="/admin" style={linkStyle}>Admin</Link>}
 
-        {!isLoggedIn ? (
-          <>
-            <Link to="/login" style={{ color: "white" }}>Login</Link>
-            <Link to="/signup" style={{ color: "white" }}>Signup</Link>
-          </>
-        ) : (
-          <>
-            <Link to="/orders" style={{ color: "white" }}>Orders</Link>
-            <Link to="/cart" style={{ color: "white" }}>Cart</Link>
-            {user?.isAdmin && <Link to="/admin" style={{ color: "white" }}>Admin</Link>}
-            <button
-              onClick={handleLogout}
-              style={{ background: "transparent", border: "1px solid white", color: "white", padding: "5px 10px", cursor: "pointer" }}
-            >
-              Logout
-            </button>
-          </>
-        )}
-      </nav>
+          {!isLoggedIn ? (
+            <>
+              <Link to="/login" style={linkStyle}>Login</Link>
+              <Link to="/signup" style={linkStyle}>Create Account</Link>
+            </>
+          ) : (
+            <span onClick={handleLogout} style={linkStyle}>Logout</span>
+          )}
+        </nav>
+      </header>
 
+      {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
@@ -71,7 +84,6 @@ function App() {
         <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
-        {/* <Route path="/checkout" element={<Checkout />} /> ❌ removed */}
         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
       </Routes>
     </div>
