@@ -10,6 +10,9 @@ import Cancel from "./pages/Cancel";
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./ProtectedRoute";
 
+// ⭐ NEW — import your shop page
+import Shop from "./pages/Shop";
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -46,22 +49,43 @@ function App() {
   return (
     <div style={{ fontFamily: "Arial, sans-serif" }}>
       {/* Nav Bar */}
-      <header style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "20px 50px",
-        borderBottom: "1px solid #ddd"
-      }}>
-        <h1 style={{ fontFamily: "Impact, sans-serif", fontSize: "2.5rem", letterSpacing: "2px" }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "20px 50px",
+          borderBottom: "1px solid #ddd"
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: "Impact, sans-serif",
+            fontSize: "2.5rem",
+            letterSpacing: "2px"
+          }}
+        >
           VINYLVERSE
         </h1>
-        <nav style={{ display: "flex", gap: "25px", textTransform: "uppercase", fontSize: "0.9rem" }}>
-          <Link to="/" style={linkStyle}>Shop</Link>
+
+        <nav
+          style={{
+            display: "flex",
+            gap: "25px",
+            textTransform: "uppercase",
+            fontSize: "0.9rem"
+          }}
+        >
+          {/* ⭐ Updated: Home remains / but SHOP is its own dedicated page */}
+          <Link to="/" style={linkStyle}>Home</Link>
+          <Link to="/shop" style={linkStyle}>Shop</Link>
+
           {isLoggedIn && <Link to="/cart" style={linkStyle}>Cart</Link>}
           {isLoggedIn && <Link to="/orders" style={linkStyle}>Orders</Link>}
+
           <Link to="/about" style={linkStyle}>About</Link>
           <Link to="/contact" style={linkStyle}>Contact</Link>
+
           {user?.isAdmin && <Link to="/admin" style={linkStyle}>Admin</Link>}
 
           {!isLoggedIn ? (
@@ -77,14 +101,50 @@ function App() {
 
       {/* Routes */}
       <Routes>
+        {/* Home still exists */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
-        <Route path="/signup" element={<Signup setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
-        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-        <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+
+        {/* ⭐ NEW SHOP PAGE ROUTE */}
+        <Route path="/shop" element={<Shop />} />
+
+        <Route
+          path="/login"
+          element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />}
+        />
+        <Route
+          path="/signup"
+          element={<Signup setIsLoggedIn={setIsLoggedIn} setUser={setUser} />}
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
-        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
   );
