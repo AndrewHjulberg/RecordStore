@@ -32,15 +32,30 @@ router.post("/", async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const cartItem = await prisma.cartItem.create({
-      data: { userId: decoded.userId, listingId },
+
+    // Ensure the listing exists
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
     });
+    if (!listing) return res.status(404).json({ error: "Listing not found" });
+
+    // Only include salePrice if the column exists in your schema
+    const cartItemData = { userId: decoded.userId, listingId };
+    if (listing.salePrice !== undefined) cartItemData.salePrice = listing.salePrice;
+
+    const cartItem = await prisma.cartItem.create({
+      data: cartItemData,
+    });
+
     res.json(cartItem);
   } catch (err) {
-    console.error(err);
+    console.error("Cart add error:", err);
     res.status(500).json({ error: "Could not add to cart" });
   }
 });
+
+
+
 
 // Remove item from cart
 router.delete("/:id", async (req, res) => {
