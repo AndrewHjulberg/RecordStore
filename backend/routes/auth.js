@@ -8,9 +8,11 @@ const router = express.Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// =======================
+// Signup
+// =======================
 router.post("/signup", async (req, res) => {
   const { email, password, isAdmin } = req.body;
-  
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -18,7 +20,7 @@ router.post("/signup", async (req, res) => {
       data: {
         email,
         password: hashedPassword,
-        isAdmin: isAdmin || false, // default to false
+        isAdmin: isAdmin || false,
       },
     });
 
@@ -35,7 +37,9 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// routes/auth.js
+// =======================
+// Login
+// =======================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -48,7 +52,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin }, // ✅ include isAdmin
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -57,6 +61,119 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// =======================
+// Auth middleware
+// =======================
+export const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer "))
+    return res.status(401).json({ error: "Unauthorized" });
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId; // save userId for routes
+    next();
+  } catch (err) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+// =======================
+// Change Email
+// =======================
+router.patch("/email", authMiddleware, async (req, res) => {
+  const { newEmail } = req.body;
+
+  if (!newEmail) return res.status(400).json({ error: "Email is required" });
+
+  try {
+    // Check if email already exists
+    const exists = await prisma.user.findUnique({ where: { email: newEmail } });
+    if (exists) return res.status(409).json({ error: "Email already in use" });
+
+    // Update email
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: { email: newEmail },
+    });
+
+    // Return updated token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({ message: "Email updated", token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update email" });
+  }
+});
+
+// Change Password route
+router.patch("/password", authMiddleware, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword)
+    return res.status(400).json({ error: "Both current and new password required" });
+
+  try {
+    // Get current user
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Verify current password
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) return res.status(401).json({ error: "Current password is incorrect" });
+
+    // Hash new password and update
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: req.userId },
+      data: { password: hashedPassword },
+    });
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update password" });
+  }
+});
+
+router.delete("/delete", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Find all orders for the user
+    const orders = await prisma.order.findMany({ where: { userId } });
+    const orderIds = orders.map(order => order.id);
+
+    // Delete all order items for those orders
+    if (orderIds.length > 0) {
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+    }
+
+    // Delete orders
+    await prisma.order.deleteMany({ where: { userId } });
+
+    // Delete cart items
+    await prisma.cartItem.deleteMany({ where: { userId } });
+
+    // Delete user
+    await prisma.user.delete({ where: { id: userId } });
+
+    res.status(200).json({ message: "Account and all associated data deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete account" });
   }
 });
 
