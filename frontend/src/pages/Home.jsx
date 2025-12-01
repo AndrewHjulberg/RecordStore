@@ -81,28 +81,31 @@ function Home() {
       textAlign: "center", backgroundColor: "#f9f9f9"
     }}>
       <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
-        <img src={listing.imageUrl} alt={listing.title} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
+        <img 
+          src={listing.imageUrl} 
+          alt={listing.title} 
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} 
+        />
       </div>
+
+      {/* Only show title + artist */}
       <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
       <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
-      {listing.genre && <p style={{ margin: "5px 0", fontStyle: "italic", color: "#777" }}>{listing.genre}</p>}
-      <p style={{ margin: "5px 0", fontWeight: "bold" }}>
-        {isOnSale && listing.salePrice
-          ? <>
-              <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>${listing.price}</span>
-              <span>${listing.salePrice}</span>
-            </>
-          : <>${listing.price}</>
-        }
-      </p>
+
+      {/* View button only */}
       <button
         onClick={() => setSelectedListing(listing)}
-        style={{ marginTop: "10px", padding: "8px 12px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
+        style={{ 
+          marginTop: "10px", padding: "8px 12px", 
+          backgroundColor: "#000", color: "#fff", 
+          border: "none", borderRadius: "5px", cursor: "pointer" 
+        }}
       >
         View Record
       </button>
     </div>
   );
+
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
