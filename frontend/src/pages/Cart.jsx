@@ -51,6 +51,11 @@ function Cart() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
+          items: cartItems.map(item => ({
+            listingId: item.listing.id,
+            price: item.listing.salePrice ?? item.listing.price, // use salePrice if it exists
+            quantity: 1
+          })),
           fullName: "Customer Name",
           address: "123 Main St",
           city: "City",
@@ -67,7 +72,10 @@ function Cart() {
     }
   };
 
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.listing.price, 0);
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + ((item.listing.salePrice ?? item.listing.price)),
+    0
+  );
 
   if (loading) return <p>Loading cart...</p>;
 
@@ -82,16 +90,54 @@ function Cart() {
         <>
           <div style={{ display: "grid", gap: "20px" }}>
             {cartItems.map((item) => (
-              <div key={item.id} style={{ display: "flex", gap: "15px", border: "1px solid #ddd", padding: "15px", borderRadius: "8px", backgroundColor: "#fff" }}>
-                <img src={item.listing.imageUrl} alt={item.listing.title} style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "6px" }} />
+              <div
+                key={item.id}
+                style={{
+                  display: "flex",
+                  gap: "15px",
+                  border: "1px solid #ddd",
+                  padding: "15px",
+                  borderRadius: "8px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <img
+                  src={item.listing.imageUrl}
+                  alt={item.listing.title}
+                  style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "6px" }}
+                />
                 <div style={{ flex: 1 }}>
                   <h2 style={{ margin: "0 0 5px 0" }}>{item.listing.title}</h2>
                   <p style={{ margin: "0 0 5px 0", color: "#555" }}>{item.listing.artist}</p>
                   <p style={{ margin: "0 0 5px 0", fontStyle: "italic", color: "#777" }}>{item.listing.genre}</p>
-                  <p style={{ margin: "5px 0", fontWeight: "bold" }}>${item.listing.price.toFixed(2)}</p>
+                  <p style={{ margin: "5px 0", fontWeight: "bold" }}>
+                    {item.listing.salePrice ? (
+                      <>
+                        <span
+                          style={{
+                            textDecoration: "line-through",
+                            color: "#888",
+                            marginRight: "8px",
+                          }}
+                        >
+                          ${item.listing.price.toFixed(2)}
+                        </span>
+                        <span>${item.listing.salePrice.toFixed(2)}</span>
+                      </>
+                    ) : (
+                      <>${item.listing.price.toFixed(2)}</>
+                    )}
+                  </p>
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    style={{ padding: "5px 10px", backgroundColor: "#dc3545", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
+                    style={{
+                      padding: "5px 10px",
+                      backgroundColor: "#dc3545",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                    }}
                   >
                     Remove
                   </button>
@@ -104,7 +150,14 @@ function Cart() {
           <div style={{ textAlign: "right" }}>
             <button
               onClick={handleProceedToCheckout}
-              style={{ padding: "10px 20px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#007bff",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
             >
               Proceed to Checkout
             </button>

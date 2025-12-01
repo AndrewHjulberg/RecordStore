@@ -38,6 +38,7 @@ model CartItem {
   id        Int      @id @default(autoincrement())
   userId    Int
   listingId Int
+  salePrice Int?
   listing   Listing  @relation(fields: [listingId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
   stripeSessionId String?

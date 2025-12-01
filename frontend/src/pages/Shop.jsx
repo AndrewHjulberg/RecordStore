@@ -71,47 +71,72 @@ function Shop() {
   });
 
   const renderListingCard = (listing) => (
-    <div key={listing.id} style={{
-      border: "1px solid #eee", borderRadius: "10px", padding: "15px",
-      textAlign: "center", backgroundColor: "#f9f9f9"
-    }}>
-      <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
-        <img src={listing.imageUrl} alt={listing.title}
-          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
-      </div>
+    <div
+        key={listing.id}
+        style={{
+        position: "relative",
+        border: "1px solid #eee",
+        borderRadius: "10px",
+        padding: "15px",
+        textAlign: "center",
+        backgroundColor: "#f9f9f9"
+        }}
+    >
 
-      <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
-      <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
-      {listing.genre && (
-        <p style={{ margin: "5px 0", fontStyle: "italic", color: "#777" }}>{listing.genre}</p>
-      )}
-
-      {/* PRICE WITH SALE */}
-      <p style={{ margin: "5px 0", fontWeight: "bold" }}>
-        {listing.onSale && listing.salePrice ? (
-          <>
-            <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
-              ${listing.price}
-            </span>
-            <span>${listing.salePrice}</span>
-          </>
-        ) : (
-          <>${listing.price}</>
+        {/* On Sale Badge */}
+        {listing.onSale && listing.salePrice && (
+        <div
+            style={{
+            position: "absolute",
+            top: "10px",
+            left: "10px",
+            backgroundColor: "#ff4d4d",
+            color: "#fff",
+            padding: "5px 10px",
+            borderRadius: "5px",
+            fontSize: "0.8rem",
+            fontWeight: "bold"
+            }}
+        >
+            On Sale!
+        </div>
         )}
-      </p>
 
-      <button
+        <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
+        <img
+            src={listing.imageUrl}
+            alt={listing.title}
+            style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            borderRadius: "8px"
+            }}
+        />
+        </div>
+
+        {/* Title + artist only */}
+        <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
+        <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
+
+        <button
         onClick={() => setSelectedListing(listing)}
         style={{
-          marginTop: "10px", padding: "8px 12px",
-          backgroundColor: "#000", color: "#fff",
-          border: "none", borderRadius: "5px", cursor: "pointer"
+            marginTop: "10px",
+            padding: "8px 12px",
+            backgroundColor: "#000",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer"
         }}
-      >
+        >
         View Record
-      </button>
+        </button>
     </div>
-  );
+    );
+
+
 
   // ESC closes modal
   useEffect(() => {

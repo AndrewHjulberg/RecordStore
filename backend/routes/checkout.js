@@ -40,7 +40,7 @@ export const createCheckoutSession = async (req, res) => {
           description: item.listing.artist,
           images: [item.listing.imageUrl],
         },
-        unit_amount: Math.round(item.listing.price * 100),
+        unit_amount: Math.round((item.salePrice ?? item.listing.price) * 100),
       },
       quantity: 1,
     }));
@@ -110,7 +110,11 @@ export const stripeWebhook = async (req, res) => {
     });
 
     if (cartItems.length > 0) {
-      const totalPrice = cartItems.reduce((sum, item) => sum + item.listing.price, 0);
+      const totalPrice = cartItems.reduce(
+        (sum, item) => sum + (item.listing.salePrice ?? item.listing.price),
+        0
+      );
+
 
       // ✅ Create order including real shipping info
       await prisma.order.create({
@@ -123,7 +127,7 @@ export const stripeWebhook = async (req, res) => {
           items: {
             create: cartItems.map((item) => ({
               listingId: item.listingId,
-              price: item.listing.price,
+              price: item.salePrice ?? item.listing.price,
             })),
           },
         },
