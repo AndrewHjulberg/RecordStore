@@ -123,20 +123,23 @@ function Home() {
         <p style={{ maxWidth: "600px", margin: "0 auto 20px", color: "#555" }}>
           Discover handpicked vintage records from across the globe. Every spin tells a story.
         </p>
-        <div style={{ display: "flex", gap: "10px", justifyContent: "center", maxWidth: "400px", margin: "0 auto" }}>
-          <input
-            type="text"
-            placeholder="Search for artists, albums, or genres..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-          />
+        <div style={{ textAlign: "center", marginTop: "25px" }}>
           <button
-            style={{ padding: "10px 15px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
+            onClick={() => window.location.href = "/shop"}
+            style={{
+              padding: "12px 22px",
+              backgroundColor: "#000",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "1rem",
+              cursor: "pointer"
+            }}
           >
-            Search
+            Browse All Records
           </button>
         </div>
+
       </section>
 
       {/* Featured Finds */}
