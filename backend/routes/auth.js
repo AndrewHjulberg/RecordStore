@@ -146,5 +146,36 @@ router.patch("/password", authMiddleware, async (req, res) => {
   }
 });
 
+router.delete("/delete", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Find all orders for the user
+    const orders = await prisma.order.findMany({ where: { userId } });
+    const orderIds = orders.map(order => order.id);
+
+    // Delete all order items for those orders
+    if (orderIds.length > 0) {
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+    }
+
+    // Delete orders
+    await prisma.order.deleteMany({ where: { userId } });
+
+    // Delete cart items
+    await prisma.cartItem.deleteMany({ where: { userId } });
+
+    // Delete user
+    await prisma.user.delete({ where: { id: userId } });
+
+    res.status(200).json({ message: "Account and all associated data deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
 
 export default router;

@@ -15,6 +15,10 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
 
+  // === Delete Account ===
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState("");
+
   const menuItem = (key, label) => (
     <button
       onClick={() => setActiveSection(key)}
@@ -112,6 +116,45 @@ export default function SettingsPage() {
     }
   };
 
+  // === Handle Delete Account ===
+  const handleDeleteAccount = async () => {
+    setDeleteError("");
+    setDeleteSuccess("");
+
+    if (!window.confirm("⚠️ Are you sure you want to delete your account? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/auth/delete", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        console.error("Failed to parse JSON from server.");
+      }
+
+      if (!res.ok) {
+        setDeleteError(data.error || "Failed to delete account");
+        return;
+      }
+
+      localStorage.removeItem("token");
+      setDeleteSuccess("Account deleted successfully. Redirecting...");
+      window.location.href = "/"; // or navigate programmatically
+    } catch (err) {
+      console.error(err);
+      setDeleteError("Something went wrong");
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-white text-black flex flex-col items-center p-6">
       <h1 className="text-3xl font-bold mb-8">User Settings</h1>
@@ -120,7 +163,6 @@ export default function SettingsPage() {
         {/* LEFT MENU */}
         <div className="w-1/3 border-r border-black flex flex-col bg-gray-100">
           {menuItem("account", "Account Settings")}
-          {menuItem("address", "Shipping Addresses")}
           {menuItem("notifications", "Email Notifications")}
           {menuItem("delete", "Delete Account")}
         </div>
@@ -185,23 +227,29 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Other sections placeholders */}
-          {activeSection === "address" && (
-            <div className="border p-4 rounded-lg border-black">
-              <h2 className="text-2xl font-semibold mb-4">Shipping Addresses</h2>
-              <p>Placeholder for adding/editing/deleting shipping addresses</p>
-            </div>
-          )}
+          {/* Email Notifications placeholder */}
           {activeSection === "notifications" && (
             <div className="border p-4 rounded-lg border-black">
               <h2 className="text-2xl font-semibold mb-4">Email Notifications</h2>
               <p>Placeholder for email notification preferences</p>
             </div>
           )}
+
+          {/* Delete Account */}
           {activeSection === "delete" && (
-            <div className="border p-4 rounded-lg border-black">
+            <div className="border p-4 rounded-lg border-black flex flex-col gap-3">
               <h2 className="text-2xl font-semibold mb-4">Delete Account</h2>
-              <p>Placeholder for delete account button</p>
+              <p className="text-red-600 mb-2">
+                ⚠️ Warning: This will permanently delete your account, along with all your orders and cart items.
+              </p>
+              <button
+                onClick={handleDeleteAccount}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 transition"
+              >
+                Delete My Account
+              </button>
+              {deleteError && <p className="text-red-600">{deleteError}</p>}
+              {deleteSuccess && <p className="text-green-600">{deleteSuccess}</p>}
             </div>
           )}
         </div>
