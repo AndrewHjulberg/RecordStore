@@ -62,7 +62,8 @@ router.post("/", requireAdmin, async (req, res) => {
   }
 });
 
-// ✅ GET /listings — now supports release year filtering
+
+// ✅ GET /listings — now supports decade filtering
 router.get("/", async (req, res) => {
   const {
     search,
@@ -74,9 +75,22 @@ router.get("/", async (req, res) => {
     releaseYear,
     minYear,
     maxYear,
+    decade, // 👈 NEW
   } = req.query;
 
   try {
+    // 👇 Build decade boundaries if decade param exists
+    let decadeMin = null;
+    let decadeMax = null;
+
+    if (decade) {
+      const base = parseInt(decade);
+      if (!isNaN(base)) {
+        decadeMin = base;
+        decadeMax = base + 9;
+      }
+    }
+
     const listings = await prisma.listing.findMany({
       where: {
         AND: [
@@ -88,6 +102,7 @@ router.get("/", async (req, res) => {
                 ],
               }
             : {},
+
           genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
 
           // 🎵 Price filters
@@ -98,10 +113,16 @@ router.get("/", async (req, res) => {
           featured !== undefined ? { featured: featured === "true" } : {},
           onSale !== undefined ? { onSale: onSale === "true" } : {},
 
-          // 📅 Release year filters
+          // 🎵 Specific release year
           releaseYear ? { releaseYear: parseInt(releaseYear) } : {},
+
+          // 🎵 Direct year range filters
           minYear ? { releaseYear: { gte: parseInt(minYear) } } : {},
           maxYear ? { releaseYear: { lte: parseInt(maxYear) } } : {},
+
+          // 📀 Decade filter (1960 → 1960–1969)
+          decadeMin ? { releaseYear: { gte: decadeMin } } : {},
+          decadeMax ? { releaseYear: { lte: decadeMax } } : {},
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -113,5 +134,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch listings" });
   }
 });
+
 
 export default router;
