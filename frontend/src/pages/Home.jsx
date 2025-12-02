@@ -179,17 +179,29 @@ function Home() {
               style={{ width: "100%", height: "250px", objectFit: "cover", borderRadius: "8px", marginBottom: "15px" }} />
             <h2>{selectedListing.title}</h2>
             <p>{selectedListing.artist}</p>
-            {selectedListing.genre && <p><em>{selectedListing.genre}</em></p>}
+            {selectedListing.genre && (
+              <p><em>{selectedListing.genre}</em></p>
+            )}
+
+            {/* Release Year */}
+            {selectedListing.releaseYear && (
+              <p>Released: {selectedListing.releaseYear}</p>
+            )}
+
             <p>
               {selectedListing.onSale && selectedListing.salePrice
                 ? <>
-                    <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>${selectedListing.price}</span>
+                    <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
+                      ${selectedListing.price}
+                    </span>
                     <span>${selectedListing.salePrice}</span>
                   </>
                 : <>${selectedListing.price}</>
               }
             </p>
+
             <p>Condition: {selectedListing.condition}</p>
+
             <button
               onClick={() => handleAddToCart(selectedListing.id)}
               style={{ marginTop: "10px", width: "100%", padding: "10px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}

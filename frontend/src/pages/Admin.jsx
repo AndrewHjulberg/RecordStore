@@ -7,10 +7,26 @@ function Admin() {
   const [condition, setCondition] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [genre, setGenre] = useState("");
+  const [releaseYear, setReleaseYear] = useState("");  // NEW
   const [featured, setFeatured] = useState(false);
   const [onSale, setOnSale] = useState(false);
   const [salePrice, setSalePrice] = useState("");
   const [message, setMessage] = useState("");
+
+  const GENRES = [
+    "Rock",
+    "Pop",
+    "Hip-Hop",
+    "Jazz",
+    "Electronic",
+    "Metal",
+    "Country",
+    "Classical",
+    "R&B",
+    "Folk",
+    "Reggae",
+    "Soundtrack",
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,21 +37,20 @@ function Admin() {
     }
 
     try {
-      // Convert to integers
       const body = {
         title,
         artist,
         genre,
-        price: parseInt(price),        // INT
+        releaseYear: releaseYear ? parseInt(releaseYear) : null,  // NEW
+        price: parseInt(price),
         condition,
         imageUrl,
         featured,
         onSale,
       };
 
-      // Only include salePrice if onSale is true
       if (onSale) {
-        body.salePrice = parseInt(salePrice);   // INT
+        body.salePrice = parseInt(salePrice);
       }
 
       const res = await fetch("http://localhost:5000/listings", {
@@ -49,12 +64,15 @@ function Admin() {
 
       if (res.ok) {
         setMessage("✅ Listing created successfully!");
+
+        // reset form
         setTitle("");
         setArtist("");
         setPrice("");
         setCondition("");
         setImageUrl("");
         setGenre("");
+        setReleaseYear(""); // NEW
         setFeatured(false);
         setOnSale(false);
         setSalePrice("");
@@ -82,20 +100,81 @@ function Admin() {
           maxWidth: "400px",
         }}
       >
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
-        <input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Artist" required />
-        <input value={genre} onChange={(e) => setGenre(e.target.value)} placeholder="Genre" required />
-        <input value={price} type="number" onChange={(e) => setPrice(e.target.value)} placeholder="Price (integer)" required />
-        <input value={condition} onChange={(e) => setCondition(e.target.value)} placeholder="Condition" required />
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL" required />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          required
+        />
+
+        <input
+          value={artist}
+          onChange={(e) => setArtist(e.target.value)}
+          placeholder="Artist"
+          required
+        />
+
+        {/* GENRE DROPDOWN */}
+        <select
+          value={genre}
+          onChange={(e) => setGenre(e.target.value)}
+          required
+        >
+          <option value="">Select Genre</option>
+          {GENRES.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+        </select>
+
+        {/* RELEASE YEAR */}
+        <input
+          type="number"
+          value={releaseYear}
+          onChange={(e) => setReleaseYear(e.target.value)}
+          placeholder="Release Year (e.g. 1999)"
+          min="1900"
+          max={new Date().getFullYear()}
+        />
+
+        <input
+          value={price}
+          type="number"
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Price (integer)"
+          required
+        />
+
+        <input
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          placeholder="Condition"
+          required
+        />
+
+        <input
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          placeholder="Image URL"
+          required
+        />
 
         <label>
-          <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={featured}
+            onChange={(e) => setFeatured(e.target.checked)}
+          />
           Featured
         </label>
 
         <label>
-          <input type="checkbox" checked={onSale} onChange={(e) => setOnSale(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={onSale}
+            onChange={(e) => setOnSale(e.target.checked)}
+          />
           On Sale
         </label>
 
@@ -113,7 +192,7 @@ function Admin() {
           type="submit"
           style={{
             padding: "10px",
-            background: "#007bff",
+            background: "#000",
             color: "#fff",
             border: "none",
             borderRadius: "5px",

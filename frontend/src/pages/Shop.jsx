@@ -13,6 +13,8 @@ function Shop() {
 
   const [selectedListing, setSelectedListing] = useState(null);
 
+  const GENRES = ["Rock", "Pop", "Hip-Hop", "Jazz", "Electronic", "Metal", "Country", "Classical", "R&B", "Folk", "Reggae", "Soundtrack"];
+
   const fetchListings = async () => {
     try {
       const params = new URLSearchParams();
@@ -62,7 +64,7 @@ function Shop() {
   // Sorting
   const sortedListings = [...listings].sort((a, b) => {
     switch (sortOption) {
-      case "priceLowHigh": return a.salePrice ?? a.price - (b.salePrice ?? b.price);
+      case "priceLowHigh": return (a.salePrice ?? a.price) - (b.salePrice ?? b.price);
       case "priceHighLow": return (b.salePrice ?? b.price) - (a.salePrice ?? a.price);
       case "titleAZ": return a.title.localeCompare(b.title);
       case "artistAZ": return a.artist.localeCompare(b.artist);
@@ -72,21 +74,19 @@ function Shop() {
 
   const renderListingCard = (listing) => (
     <div
-        key={listing.id}
-        style={{
+      key={listing.id}
+      style={{
         position: "relative",
         border: "1px solid #eee",
         borderRadius: "10px",
         padding: "15px",
         textAlign: "center",
         backgroundColor: "#f9f9f9"
-        }}
+      }}
     >
-
-        {/* On Sale Badge */}
-        {listing.onSale && listing.salePrice && (
+      {listing.onSale && listing.salePrice && (
         <div
-            style={{
+          style={{
             position: "absolute",
             top: "10px",
             left: "10px",
@@ -96,47 +96,44 @@ function Shop() {
             borderRadius: "5px",
             fontSize: "0.8rem",
             fontWeight: "bold"
-            }}
+          }}
         >
-            On Sale!
+          On Sale!
         </div>
-        )}
+      )}
 
-        <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
+      <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
         <img
-            src={listing.imageUrl}
-            alt={listing.title}
-            style={{
+          src={listing.imageUrl}
+          alt={listing.title}
+          style={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
             borderRadius: "8px"
-            }}
+          }}
         />
-        </div>
+      </div>
 
-        {/* Title + artist only */}
-        <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
-        <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
+      <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
+      <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
 
-        <button
+      <button
         onClick={() => setSelectedListing(listing)}
         style={{
-            marginTop: "10px",
-            padding: "8px 12px",
-            backgroundColor: "#000",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer"
+          marginTop: "10px",
+          padding: "8px 12px",
+          backgroundColor: "#000",
+          color: "#fff",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer"
         }}
-        >
+      >
         View Record
-        </button>
+      </button>
     </div>
-    );
-
-
+  );
 
   // ESC closes modal
   useEffect(() => {
@@ -146,37 +143,19 @@ function Shop() {
   }, []);
 
   return (
-    <div style={{
-      fontFamily: "Arial, sans-serif",
-      minHeight: "100vh",
-      backgroundColor: "#fff",
-      color: "#000",
-      padding: "20px"
-    }}>
+    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
       {message && (
-        <div style={{
-          marginBottom: "20px",
-          padding: "10px",
-          background: "#f0f0f0",
-          borderRadius: "5px"
-        }}>
+        <div style={{ marginBottom: "20px", padding: "10px", background: "#f0f0f0", borderRadius: "5px" }}>
           {message}
         </div>
       )}
 
-      {/* PAGE TITLE */}
       <h2 style={{ fontSize: "2.5rem", fontWeight: "bold", textAlign: "center", marginBottom: "30px" }}>
         Shop All Records
       </h2>
 
       {/* FILTER BAR */}
-      <div style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "15px",
-        marginBottom: "30px",
-        justifyContent: "center"
-      }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", marginBottom: "30px", justifyContent: "center" }}>
         <input
           type="text"
           placeholder="Search..."
@@ -185,13 +164,16 @@ function Shop() {
           style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc", minWidth: "200px" }}
         />
 
-        <input
-          type="text"
-          placeholder="Genre..."
+        <select
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
           style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc", minWidth: "150px" }}
-        />
+        >
+          <option value="">All Genres</option>
+          {GENRES.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
 
         <input
           type="number"
@@ -223,11 +205,7 @@ function Shop() {
       </div>
 
       {/* GRID OF LISTINGS */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-        gap: "25px"
-      }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "25px" }}>
         {sortedListings.length > 0 ? (
           sortedListings.map(renderListingCard)
         ) : (
@@ -255,15 +233,12 @@ function Shop() {
             <img
               src={selectedListing.imageUrl}
               alt={selectedListing.title}
-              style={{
-                width: "100%", height: "250px",
-                objectFit: "cover", borderRadius: "8px",
-                marginBottom: "15px"
-              }}
+              style={{ width: "100%", height: "250px", objectFit: "cover", borderRadius: "8px", marginBottom: "15px" }}
             />
             <h2>{selectedListing.title}</h2>
             <p>{selectedListing.artist}</p>
             {selectedListing.genre && <p><em>{selectedListing.genre}</em></p>}
+            {selectedListing.releaseYear && <p>Released: {selectedListing.releaseYear}</p>}
 
             <p>
               {selectedListing.onSale && selectedListing.salePrice ? (
@@ -282,23 +257,14 @@ function Shop() {
 
             <button
               onClick={() => handleAddToCart(selectedListing.id)}
-              style={{
-                marginTop: "10px", width: "100%", padding: "10px",
-                backgroundColor: "#000", color: "#fff",
-                border: "none", borderRadius: "5px", cursor: "pointer"
-              }}
+              style={{ marginTop: "10px", width: "100%", padding: "10px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}
             >
               Add to Cart
             </button>
 
             <button
               onClick={() => setSelectedListing(null)}
-              style={{
-                marginTop: "10px", width: "100%", padding: "10px",
-                backgroundColor: "#ddd",
-                border: "none", borderRadius: "5px",
-                cursor: "pointer"
-              }}
+              style={{ marginTop: "10px", width: "100%", padding: "10px", backgroundColor: "#ddd", border: "none", borderRadius: "5px", cursor: "pointer" }}
             >
               Close
             </button>
@@ -306,13 +272,7 @@ function Shop() {
         </div>
       )}
 
-      <footer style={{
-        padding: "20px",
-        borderTop: "1px solid #ddd",
-        textAlign: "center",
-        color: "#555",
-        marginTop: "40px"
-      }}>
+      <footer style={{ padding: "20px", borderTop: "1px solid #ddd", textAlign: "center", color: "#555", marginTop: "40px" }}>
         © {new Date().getFullYear()} Vinylverse. All rights reserved.
       </footer>
     </div>

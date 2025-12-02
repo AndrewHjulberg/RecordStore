@@ -26,7 +26,18 @@ function requireAdmin(req, res, next) {
 
 // ✅ POST route to add a listing (INT-friendly)
 router.post("/", requireAdmin, async (req, res) => {
-  const { title, artist, genre, price, condition, imageUrl, featured, onSale, salePrice } = req.body;
+  const {
+    title,
+    artist,
+    genre,
+    price,
+    condition,
+    imageUrl,
+    featured,
+    onSale,
+    salePrice,
+    releaseYear,
+  } = req.body;
 
   try {
     const listing = await prisma.listing.create({
@@ -34,12 +45,13 @@ router.post("/", requireAdmin, async (req, res) => {
         title,
         artist,
         genre,
-        price: parseInt(price),            // <-- INT
+        price: parseInt(price),
         condition,
         imageUrl,
         featured: !!featured,
         onSale: !!onSale,
-        salePrice: onSale ? parseInt(salePrice) : null, // <-- INT or NULL
+        salePrice: onSale ? parseInt(salePrice) : null,
+        releaseYear: releaseYear ? parseInt(releaseYear) : null,
       },
     });
 
@@ -50,9 +62,19 @@ router.post("/", requireAdmin, async (req, res) => {
   }
 });
 
-// GET /listings (unchanged)
+// ✅ GET /listings — now supports release year filtering
 router.get("/", async (req, res) => {
-  const { search, genre, minPrice, maxPrice, featured, onSale } = req.query;
+  const {
+    search,
+    genre,
+    minPrice,
+    maxPrice,
+    featured,
+    onSale,
+    releaseYear,
+    minYear,
+    maxYear,
+  } = req.query;
 
   try {
     const listings = await prisma.listing.findMany({
@@ -67,10 +89,19 @@ router.get("/", async (req, res) => {
               }
             : {},
           genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
+
+          // 🎵 Price filters
           minPrice ? { price: { gte: parseInt(minPrice) } } : {},
           maxPrice ? { price: { lte: parseInt(maxPrice) } } : {},
+
+          // 🌟 Featured + On Sale filters
           featured !== undefined ? { featured: featured === "true" } : {},
           onSale !== undefined ? { onSale: onSale === "true" } : {},
+
+          // 📅 Release year filters
+          releaseYear ? { releaseYear: parseInt(releaseYear) } : {},
+          minYear ? { releaseYear: { gte: parseInt(minYear) } } : {},
+          maxYear ? { releaseYear: { lte: parseInt(maxYear) } } : {},
         ],
       },
       orderBy: { createdAt: "desc" },
