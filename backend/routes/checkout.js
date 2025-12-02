@@ -4,13 +4,11 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
-
-//console.log(process.env.STRIPE_SECRET_KEY);
+import { sendEmail } from "../utils/email.js";  // ⭐ ADDED
 
 const router = express.Router();
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 
 // --- Create Stripe checkout session handler ---
 export const createCheckoutSession = async (req, res) => {
@@ -22,7 +20,6 @@ export const createCheckoutSession = async (req, res) => {
     const userId = decoded.userId || decoded.id;
     const { fullName, address, city, state, zip } = req.body;
 
-    // 1️⃣ Get user's cart items
     const cartItems = await prisma.cartItem.findMany({
       where: { userId },
       include: { listing: true },
@@ -31,7 +28,6 @@ export const createCheckoutSession = async (req, res) => {
     if (cartItems.length === 0)
       return res.status(400).json({ error: "Cart is empty" });
 
-    // 2️⃣ Prepare Stripe line items
     const lineItems = cartItems.map((item) => ({
       price_data: {
         currency: "usd",
@@ -45,23 +41,21 @@ export const createCheckoutSession = async (req, res) => {
       quantity: 1,
     }));
 
-    // 3️⃣ Create Stripe session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       line_items: lineItems,
       shipping_address_collection: {
-      allowed_countries: ["US"],
+        allowed_countries: ["US"],
       },
       success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: "http://localhost:5173/cancel",
       metadata: { userId: String(userId), fullName, address, city, state, zip },
     });
 
-    // 4️⃣ Optional: store Stripe session ID in cart items
     await prisma.cartItem.updateMany({
       where: { userId },
-      data: { stripeSessionId: session.id }, // make sure this column exists exactly
+      data: { stripeSessionId: session.id },
     });
 
     res.json({ url: session.url });
@@ -89,7 +83,6 @@ export const stripeWebhook = async (req, res) => {
     const session = event.data.object;
     const userId = parseInt(session.metadata.userId);
 
-    // ✅ Prefer Stripe-collected shipping info, fallback to metadata
     const shipping = session.shipping || {};
     const customerDetails = session.customer_details || {};
     const fullName =
@@ -103,7 +96,6 @@ export const stripeWebhook = async (req, res) => {
     const state = addressObj.state || session.metadata?.state || "";
     const zip = addressObj.postal_code || session.metadata?.zip || "";
 
-    // Fetch cart items linked to this session
     const cartItems = await prisma.cartItem.findMany({
       where: { stripeSessionId: session.id },
       include: { listing: true },
@@ -115,9 +107,7 @@ export const stripeWebhook = async (req, res) => {
         0
       );
 
-
-      // ✅ Create order including real shipping info
-      await prisma.order.create({
+      const order = await prisma.order.create({
         data: {
           userId,
           totalPrice,
@@ -133,10 +123,44 @@ export const stripeWebhook = async (req, res) => {
         },
       });
 
-      // Clear the user's cart
+      // Delete cart after order
       await prisma.cartItem.deleteMany({ where: { stripeSessionId: session.id } });
 
-      console.log(`✅ Order created for user ${userId} with shipping: ${fullName}, ${address}, ${city}, ${state} ${zip}`);
+      console.log(`✅ Order created for user ${userId}`);
+
+      // ------------------------------
+      // ⭐ SEND ORDER CONFIRMATION EMAIL
+      // ------------------------------
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+
+      if (user?.email) {
+        const itemsHtml = cartItems
+          .map(
+            (item) =>
+              `<p><strong>${item.listing.title}</strong> — ${item.listing.artist} — $${item.listing.salePrice ?? item.listing.price}</p>`
+          )
+          .join("");
+
+        await sendEmail({
+          to: user.email,
+          subject: "Your Order Confirmation",
+          html: `
+            <h1>Thank you for your order!</h1>
+            <p>Your order has been successfully placed.</p>
+
+            <h3>Order Details:</h3>
+            ${itemsHtml}
+
+            <p><strong>Total:</strong> $${totalPrice}</p>
+
+            <h3>Shipping To:</h3>
+            <p>${fullName}<br>${address}<br>${city}, ${state} ${zip}</p>
+
+            <p>Thanks for shopping at our record store!</p>
+          `,
+        });
+      }
     } else {
       console.warn(`⚠️ No cart items found for session ${session.id}`);
     }
@@ -145,8 +169,6 @@ export const stripeWebhook = async (req, res) => {
   res.json({ received: true });
 };
 
-
-// --- Optional router for normal usage ---
 router.post("/", createCheckoutSession);
 router.post("/webhook", stripeWebhook);
 
