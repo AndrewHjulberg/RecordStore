@@ -4,6 +4,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import "../assets/css/Login.css";
 
 function Login({ setIsLoggedIn, setUser }) {
+function Login({ setIsLoggedIn, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();

@@ -8,53 +8,61 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   password  String
-  isAdmin  Boolean @default(false)
-  role      String    @default("customer")
-  createdAt DateTime  @default(now())
-  orders    Order[]
+  role      String     @default("customer")
+  createdAt DateTime   @default(now())
+  isAdmin   Boolean    @default(false)
   cartItems CartItem[]
+  orders    Order[]
 }
 
 model Listing {
-  id        Int      @id @default(autoincrement())
-  title     String
-  artist    String
-  price     Int
-  condition String
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  cartItems CartItem[]
-  orderItems OrderItem[]  
+  id          Int         @id @default(autoincrement())
+  title       String
+  artist      String
+  price       Int
+  condition   String
+  imageUrl    String?
+  createdAt   DateTime    @default(now())
+  genre       String?
+  featured    Boolean     @default(false)
+  onSale      Boolean     @default(false)
+  salePrice   Int?
+  releaseYear Int?
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
 }
 
 model CartItem {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  listingId Int
-  listing   Listing  @relation(fields: [listingId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  listingId       Int
+  createdAt       DateTime @default(now())
+  stripeSessionId String?
+  salePrice       Int?
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
 }
 
 model Order {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  totalPrice Float   @default(0.0)
-  status    String   @default("pending")
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  createdAt       DateTime    @default(now())
+  status          String      @default("pending")
+  totalPrice      Float       @default(0.0)
   shippingAddress String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  items OrderItem[]
+  stripeSessionId String?
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   orderId   Int
   listingId Int
-  order     Order    @relation(fields: [orderId], references: [id])
-  listing   Listing  @relation(fields: [listingId], references: [id])
   price     Float
+  listing   Listing @relation(fields: [listingId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id])
 }

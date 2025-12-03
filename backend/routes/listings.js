@@ -24,14 +24,37 @@ function requireAdmin(req, res, next) {
   }
 }
 
-// ✅ POST route to add a listing
+// ✅ POST route to add a listing (INT-friendly)
 router.post("/", requireAdmin, async (req, res) => {
-  const { title, artist, price, condition, imageUrl } = req.body;
+  const {
+    title,
+    artist,
+    genre,
+    price,
+    condition,
+    imageUrl,
+    featured,
+    onSale,
+    salePrice,
+    releaseYear,
+  } = req.body;
 
   try {
     const listing = await prisma.listing.create({
-      data: { title, artist, price: parseFloat(price), condition, imageUrl },
+      data: {
+        title,
+        artist,
+        genre,
+        price: parseInt(price),
+        condition,
+        imageUrl,
+        featured: !!featured,
+        onSale: !!onSale,
+        salePrice: onSale ? parseInt(salePrice) : null,
+        releaseYear: releaseYear ? parseInt(releaseYear) : null,
+      },
     });
+
     res.json(listing);
   } catch (err) {
     console.error(err);
@@ -39,17 +62,78 @@ router.post("/", requireAdmin, async (req, res) => {
   }
 });
 
-// GET all listings
+
+// ✅ GET /listings — now supports decade filtering
 router.get("/", async (req, res) => {
+  const {
+    search,
+    genre,
+    minPrice,
+    maxPrice,
+    featured,
+    onSale,
+    releaseYear,
+    minYear,
+    maxYear,
+    decade, // 👈 NEW
+  } = req.query;
+
   try {
-    const listings = await prisma.listing.findMany();
+    // 👇 Build decade boundaries if decade param exists
+    let decadeMin = null;
+    let decadeMax = null;
+
+    if (decade) {
+      const base = parseInt(decade);
+      if (!isNaN(base)) {
+        decadeMin = base;
+        decadeMax = base + 9;
+      }
+    }
+
+    const listings = await prisma.listing.findMany({
+      where: {
+        AND: [
+          search
+            ? {
+                OR: [
+                  { title: { contains: search, mode: "insensitive" } },
+                  { artist: { contains: search, mode: "insensitive" } },
+                ],
+              }
+            : {},
+
+          genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
+
+          // 🎵 Price filters
+          minPrice ? { price: { gte: parseInt(minPrice) } } : {},
+          maxPrice ? { price: { lte: parseInt(maxPrice) } } : {},
+
+          // 🌟 Featured + On Sale filters
+          featured !== undefined ? { featured: featured === "true" } : {},
+          onSale !== undefined ? { onSale: onSale === "true" } : {},
+
+          // 🎵 Specific release year
+          releaseYear ? { releaseYear: parseInt(releaseYear) } : {},
+
+          // 🎵 Direct year range filters
+          minYear ? { releaseYear: { gte: parseInt(minYear) } } : {},
+          maxYear ? { releaseYear: { lte: parseInt(maxYear) } } : {},
+
+          // 📀 Decade filter (1960 → 1960–1969)
+          decadeMin ? { releaseYear: { gte: decadeMin } } : {},
+          decadeMax ? { releaseYear: { lte: decadeMax } } : {},
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
     res.json(listings);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Failed to fetch listings" });
   }
 });
 
+
 export default router;
-
-

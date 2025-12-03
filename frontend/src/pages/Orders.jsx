@@ -8,144 +8,83 @@ function Orders() {
   useEffect(() => {
     const fetchOrders = async () => {
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.log("No token yet, skipping fetch");
-        setLoading(false);
-        return;
-      }
+      if (!token) return setLoading(false);
 
       try {
         const res = await fetch("http://localhost:5000/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         const data = await res.json();
-
-        if (Array.isArray(data)) {
-          setOrders(data);
-        } else {
-          console.warn("Unexpected response from /orders:", data);
-          setOrders([]);
-        }
+        setOrders(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Error fetching orders:", err);
+        console.error(err);
         setError("Failed to load orders.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchOrders();
   }, []);
-
-  if (loading) return <p>Loading orders...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   const handleCancel = async (orderId) => {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     try {
       const res = await fetch(`http://localhost:5000/orders/${orderId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.ok) {
-        setOrders((prevOrders) => prevOrders.filter((order) => order.id !== orderId));
-      } else {
-        const error = await res.json();
-        alert("Error cancelling order: " + error.error);
-      }
+      if (res.ok) setOrders((prev) => prev.filter((o) => o.id !== orderId));
     } catch (err) {
-      console.error("Error cancelling order:", err);
+      console.error(err);
     }
   };
 
+  if (loading) return <p>Loading orders...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>📦 My Orders</h1>
-
+    <div style={{ maxWidth: "900px", margin: "50px auto", padding: "20px" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "30px" }}>My Orders</h1>
       {orders.length === 0 ? (
-        <p>No orders yet.</p>
+        <p style={{ textAlign: "center" }}>No orders yet.</p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "15px",
-                backgroundColor: "#fff",
-              }}
-            >
-              <h2>Order #{order.id}</h2>
-              <p>Status: {order.status}</p>
-              <p>
-                <strong>Total:</strong> ${order.totalPrice?.toFixed(2) || "0.00"}
-              </p>
-              <p style={{ fontSize: "12px", color: "#888" }}>
-                Ordered on: {new Date(order.createdAt).toLocaleString()}
-              </p>
-
-              <h3 style={{ marginTop: "15px" }}>Items:</h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                  gap: "10px",
-                  marginTop: "10px",
-                }}
-              >
-                {order.orderItems?.map((item) => (
-                  <div
-                    key={item.id}
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ borderBottom: "2px solid #ddd", padding: "10px", textAlign: "left" }}>Order #</th>
+              <th style={{ borderBottom: "2px solid #ddd", padding: "10px", textAlign: "left" }}>Date</th>
+              <th style={{ borderBottom: "2px solid #ddd", padding: "10px", textAlign: "left" }}>Status</th>
+              <th style={{ borderBottom: "2px solid #ddd", padding: "10px", textAlign: "left" }}>Total</th>
+              <th style={{ borderBottom: "2px solid #ddd", padding: "10px" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order.id} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ padding: "10px" }}>{order.id}</td>
+                <td style={{ padding: "10px" }}>{new Date(order.createdAt).toLocaleString()}</td>
+                <td style={{ padding: "10px" }}>{order.status}</td>
+                <td style={{ padding: "10px" }}>${order.totalPrice?.toFixed(2) || "0.00"}</td>
+                <td style={{ padding: "10px" }}>
+                  <button
+                    onClick={() => handleCancel(order.id)}
                     style={{
-                      border: "1px solid #eee",
-                      borderRadius: "6px",
-                      padding: "10px",
-                      textAlign: "center",
+                      padding: "5px 10px",
+                      backgroundColor: "#dc3545",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
                     }}
                   >
-                    <img
-                      src={item.listing?.imageUrl}
-                      alt={item.listing?.title || "Record"}
-                      style={{
-                        width: "100%",
-                        height: "120px",
-                        objectFit: "cover",
-                        borderRadius: "4px",
-                        marginBottom: "8px",
-                      }}
-                    />
-                    <strong>{item.listing?.title}</strong>
-                    <p style={{ margin: "5px 0", color: "#555" }}>
-                      {item.listing?.artist}
-                    </p>
-                    <p style={{ color: "#333" }}>${item.listing?.price}</p>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={() => handleCancel(order.id)}
-                style={{
-                  backgroundColor: "#dc3545",
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 12px",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  marginTop: "15px",
-                }}
-              >
-                Cancel Order
-              </button>
-            </div>
-          ))}
-        </div>
+                    Cancel
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

@@ -106,6 +106,24 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Success page routing
+// GET /orders/session/:sessionId
+router.get("/session/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const order = await prisma.order.findFirst({
+      where: { stripeSessionId: sessionId },
+      include: { items: { include: { listing: true } } },
+    });
+
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (err) {
+    console.error("Error fetching order by session:", err);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
+
 
 
 export default router;

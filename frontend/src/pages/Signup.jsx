@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-function Signup({ setIsLoggedIn, setUser }) { // <-- add setUser prop
+function Signup({ setIsLoggedIn, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -24,34 +24,61 @@ function Signup({ setIsLoggedIn, setUser }) { // <-- add setUser prop
         // Decode JWT to get user info
         const decoded = JSON.parse(atob(data.token.split(".")[1]));
 
-        setUser(decoded);           // <-- set user state
-        setIsLoggedIn(true);        // <-- update navbar state
-        navigate("/orders");        // redirect
+        setUser(decoded);       // set user state
+        setIsLoggedIn(true);    // update navbar state
+        navigate("/orders");    // redirect after signup
       } else {
         alert(data.error || "Signup failed");
       }
     } catch (err) {
       console.error(err);
+      alert("Something went wrong. Please try again.");
     }
   };
 
   return (
-    <form onSubmit={handleSignup}>
-      <h1>Signup</h1>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-      />
-      <button type="submit">Signup</button>
-    </form>
+    <div style={{
+      maxWidth: "400px",
+      margin: "50px auto",
+      padding: "20px",
+      border: "1px solid #ddd",
+      borderRadius: "10px",
+      textAlign: "center"
+    }}>
+      <h1 style={{ marginBottom: "20px" }}>Create Account</h1>
+      <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+        />
+        <button type="submit" style={{
+          padding: "10px",
+          backgroundColor: "#000",
+          color: "#fff",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer"
+        }}>
+          Sign Up
+        </button>
+      </form>
+      <p style={{ marginTop: "15px", fontSize: "0.9rem" }}>
+        Already have an account?{" "}
+        <Link to="/login" style={{ color: "#007bff", textDecoration: "underline" }}>
+          Login
+        </Link>
+      </p>
+    </div>
   );
 }
 
