@@ -21,3 +21,27 @@ export async function sendEmail({ to, subject, html }) {
     return false;
   }
 }
+
+export const sendAccountCreatedEmail = async (toEmail, username) => {
+  try {
+    const msg = {
+      to: toEmail,
+      from: process.env.EMAIL_FROM, // your domain email
+      subject: "Welcome to VinylVerse!",
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Welcome, ${username}!</h2>
+          <p>Your account has been created successfully.</p>
+          <p>You can now log in and start browsing records anytime.</p>
+          <br/>
+          <p>— VinylVerse Team</p>
+        </div>
+      `,
+    };
+
+    await sgMail.send(msg);
+    console.log("Account creation email sent");
+  } catch (err) {
+    console.error("SendGrid Error:", err);
+  }
+};
