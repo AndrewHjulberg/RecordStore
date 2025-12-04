@@ -240,7 +240,7 @@ function App() {
           path="/settings"
           element={
             <ProtectedRoute>
-              <Settings />
+              <Settings user={user}/>
             </ProtectedRoute>
           }
         />

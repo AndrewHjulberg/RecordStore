@@ -19,6 +19,12 @@ router.post("/signup", async (req, res) => {
   const { email, password, isAdmin } = req.body;
 
   try {
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "Account already exists with this email." });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
@@ -29,7 +35,7 @@ router.post("/signup", async (req, res) => {
     });
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -56,7 +62,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -191,41 +197,36 @@ router.post("/google-login", async (req, res) => {
     });
 
     const payload = ticket.getPayload();
-    const { sub, email, name, picture } = payload;
+    const { sub, email } = payload;
 
-    // Try to find user by email
     let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      // No existing account → create new one
+      // Create new Google account
       user = await prisma.user.create({
         data: {
           email,
-          password: "", // or null if schema allows
+          password: null, // No password for Google accounts
           isAdmin: false,
-          name,
-          picture,
           googleId: sub,
         },
       });
-    } else {
-      // Existing account → update googleId if missing
-      if (!user.googleId) {
-        user = await prisma.user.update({
-          where: { email },
-          data: { googleId: sub },
-        });
-      }
+    } else if (!user.googleId) {
+      // Link Google ID to existing account
+      user = await prisma.user.update({
+        where: { email },
+        data: { googleId: sub },
+      });
     }
 
-    // Issue JWT
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    res.json({ token, user });
+    const { password, ...safeUser } = user;
+    res.json({ token, user: safeUser });
   } catch (err) {
     console.error("Google login error:", err);
     res.status(401).json({ error: "Invalid Google token" });

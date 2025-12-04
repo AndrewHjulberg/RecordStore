@@ -4,7 +4,6 @@ import { GoogleLogin } from "@react-oauth/google";
 import "../assets/css/Login.css";
 
 function Login({ setIsLoggedIn, setUser }) {
-function Login({ setIsLoggedIn, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -65,9 +64,16 @@ function Login({ setIsLoggedIn, setUser }) {
   };
 
   return (
-    <div className="login-container">
-      <form className="login-form" onSubmit={handleLogin}>
-        <h1 className="login-title">Vinylverse</h1>
+    <div style={{
+      maxWidth: "400px",
+      margin: "50px auto",
+      padding: "20px",
+      border: "1px solid #ddd",
+      borderRadius: "10px",
+      textAlign: "center"
+    }}>
+      <form style={{ display: "flex", flexDirection: "column", gap: "15px" }} onSubmit={handleLogin}>
+        <h1 style={{ fontFamily: "Impact, sans-serif", letterSpacing: "2px", marginBottom: "20px" }}>VINYLVERSE</h1>
         <p className="login-subtitle">Please sign in to continue</p>
 
         <input
@@ -76,7 +82,7 @@ function Login({ setIsLoggedIn, setUser }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
           required
-          className="login-input"
+          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
         />
 
         <input
@@ -85,16 +91,16 @@ function Login({ setIsLoggedIn, setUser }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
-          className="login-input"
+          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
         />
 
-        <button type="submit" className="login-button">
+        <button type="submit" style={{ padding: "10px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}>
           Login
         </button>
 
-        <p className="signup-text">
+        <p style={{ marginTop: "15px", fontSize: "0.9rem" }}>
           Don’t have an account?{" "}
-          <Link to="/signup" className="signup-link">
+          <Link to="/signup" style={{ color: "#007bff", textDecoration: "underline" }}>
             Create one
           </Link>
         </p>
