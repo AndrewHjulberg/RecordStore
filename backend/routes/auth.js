@@ -188,7 +188,7 @@ router.delete("/delete", authMiddleware, async (req, res) => {
 });
 
 router.post("/google-login", async (req, res) => {
-  const { credential } = req.body;
+  const { credential, useGoogle } = req.body; //  add flag from frontend
 
   try {
     const ticket = await client.verifyIdToken({
@@ -206,13 +206,28 @@ router.post("/google-login", async (req, res) => {
       user = await prisma.user.create({
         data: {
           email,
-          password: null, // No password for Google accounts
+          password: null,
           isAdmin: false,
           googleId: sub,
         },
       });
+    } else if (user.password && !user.googleId) {
+      // User has a password account but no Google link yet
+      if (useGoogle) {
+        //  User chose to switch to Google login
+        user = await prisma.user.update({
+          where: { email },
+          data: { googleId: sub, password: null }, // null out password
+        });
+      } else {
+        //  User declined Google login
+        return res.status(400).json({
+          error: "Account exists with this email.",
+          errorCode: "ACCOUNT_EXISTS", //  structured code
+        });
+      }
     } else if (!user.googleId) {
-      // Link Google ID to existing account
+      // Link Google ID to existing account (already passwordless)
       user = await prisma.user.update({
         where: { email },
         data: { googleId: sub },
@@ -220,7 +235,12 @@ router.post("/google-login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
+      {
+        userId: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        googleId: user.googleId,
+      },
       JWT_SECRET,
       { expiresIn: "1h" }
     );

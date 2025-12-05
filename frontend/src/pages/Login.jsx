@@ -1,12 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
+import GoogleLinkPrompt from "../components/GoogleLinkPrompt"; //  reusable modal
+import useGoogleAuth from "../hooks/useGoogleAuth"; //  shared hook
 import "../assets/css/Login.css";
 
 function Login({ setIsLoggedIn, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
+  const {
+    showPrompt,
+    handleGoogleSuccess,
+    handleGoogleError,
+    confirmGoogle,
+    cancelGoogle,
+  } = useGoogleAuth(setUser, setIsLoggedIn);
 
   // Username/password login
   const handleLogin = async (e) => {
@@ -33,47 +43,30 @@ function Login({ setIsLoggedIn, setUser }) {
     }
   };
 
-  // Google login success
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      // Send credential to backend for verification
-      const res = await fetch("http://localhost:5000/auth/google-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        setUser(data.user); // backend returns user object
-        setIsLoggedIn(true);
-        navigate("/orders");
-      } else {
-        alert(data.error || "Google login failed");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-    }
-  };
-
-  // Google login error
-  const handleGoogleError = () => {
-    console.error("Google Login Failed");
-    alert("Google login failed. Please try again.");
-  };
-
   return (
-    <div style={{
-      maxWidth: "400px",
-      margin: "50px auto",
-      padding: "20px",
-      border: "1px solid #ddd",
-      borderRadius: "10px",
-      textAlign: "center"
-    }}>
-      <form style={{ display: "flex", flexDirection: "column", gap: "15px" }} onSubmit={handleLogin}>
-        <h1 style={{ fontFamily: "Impact, sans-serif", letterSpacing: "2px", marginBottom: "20px" }}>VINYLVERSE</h1>
+    <div
+      style={{
+        maxWidth: "400px",
+        margin: "50px auto",
+        padding: "20px",
+        border: "1px solid #ddd",
+        borderRadius: "10px",
+        textAlign: "center",
+      }}
+    >
+      <form
+        style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+        onSubmit={handleLogin}
+      >
+        <h1
+          style={{
+            fontFamily: "Impact, sans-serif",
+            letterSpacing: "2px",
+            marginBottom: "20px",
+          }}
+        >
+          VINYLVERSE
+        </h1>
         <p className="login-subtitle">Please sign in to continue</p>
 
         <input
@@ -82,7 +75,11 @@ function Login({ setIsLoggedIn, setUser }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
           required
-          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+          style={{
+            padding: "10px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+          }}
         />
 
         <input
@@ -91,16 +88,33 @@ function Login({ setIsLoggedIn, setUser }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
-          style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+          style={{
+            padding: "10px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+          }}
         />
 
-        <button type="submit" style={{ padding: "10px", backgroundColor: "#000", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}>
+        <button
+          type="submit"
+          style={{
+            padding: "10px",
+            backgroundColor: "#000",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
           Login
         </button>
 
         <p style={{ marginTop: "15px", fontSize: "0.9rem" }}>
           Don’t have an account?{" "}
-          <Link to="/signup" style={{ color: "#007bff", textDecoration: "underline" }}>
+          <Link
+            to="/signup"
+            style={{ color: "#007bff", textDecoration: "underline" }}
+          >
             Create one
           </Link>
         </p>
@@ -111,11 +125,12 @@ function Login({ setIsLoggedIn, setUser }) {
       </div>
 
       <div className="google-login">
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={handleGoogleError}
-        />
+        <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
       </div>
+
+      {showPrompt && (
+        <GoogleLinkPrompt onConfirm={confirmGoogle} onCancel={cancelGoogle} />
+      )}
     </div>
   );
 }
