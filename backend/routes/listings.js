@@ -24,6 +24,22 @@ function requireAdmin(req, res, next) {
   }
 }
 
+router.get("/discogs", async (req, res) => {
+  const {upc} = req.query;
+  const key = process.env.DISCOGS_KEY;
+  const secret = process.env.DISCOGS_SECRET;
+
+  try{
+    const url = `https://api.discogs.com/database/search?barcode=${upc}&key=${key}&secret=${secret}`;
+    console.log(url);
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
+  } catch (err){
+    res.status(500).json({error: err.message});
+  }
+});
+
 // ✅ POST route to add a listing (INT-friendly)
 router.post("/", requireAdmin, async (req, res) => {
   const {
