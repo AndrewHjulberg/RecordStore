@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { bestFitGenre, mapDiscogsGenre } from "../helpers/discogsGenreMap";
 
 function Admin() {
+  const [upc, setUPC] = useState("");
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [price, setPrice] = useState("");
@@ -27,6 +29,51 @@ function Admin() {
     "Reggae",
     "Soundtrack",
   ];
+  
+  const upcRef = useRef(null);
+  useEffect(()=> {
+    if (upcRef.current) {
+      upcRef.current.focus();
+    }
+  }, []);
+  const handleUPCBlur = async () => {
+    if (!upc) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/listings/discogs?upc=${upc}`);
+      if (!res.ok) throw new Error("Discogs lookup failed");
+      const data = await res.json();
+
+      if (data.results && data.results.length > 0) {
+        const release = data.results.find(r => r.country === "US") || data.results[0];
+        if (release){
+          //discogs has {artist} - {title} in the title attribute, so split them
+          let artistName = "";
+          let releaseTitle = "";
+          if (release.title){
+            const parts = release.title.split(" - ");
+            if (parts.length >= 2){
+              artistName = parts[0].trim();
+              releaseTitle = parts.slice(1).join(" - ").trim();
+            } else {
+              releaseTitle = release.title;
+            }
+          }
+          setTitle(releaseTitle);
+          setArtist(artistName);
+          setImageUrl(release.cover_image || "");
+          setReleaseYear(release.year || "");
+
+          const mapped = bestFitGenre(release.genre);
+          if (mapped && GENRES.includes(mapped)) {
+            setGenre(mapped);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,6 +85,7 @@ function Admin() {
 
     try {
       const body = {
+        upc,
         title,
         artist,
         genre,
@@ -66,6 +114,7 @@ function Admin() {
         setMessage("✅ Listing created successfully!");
 
         // reset form
+        setUPC("");
         setTitle("");
         setArtist("");
         setPrice("");
@@ -100,6 +149,15 @@ function Admin() {
           maxWidth: "400px",
         }}
       >
+
+        <input
+          ref={upcRef}
+          value={upc}
+          onChange={(e) => setUPC(e.target.value)}
+          onBlur={handleUPCBlur}
+          placeholder="UPC"
+          required
+        />          
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
