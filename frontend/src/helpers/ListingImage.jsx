@@ -139,7 +139,7 @@ export default function ListingImage({ listing }) {
                   cursor: "pointer"
                 }}
               >
-                Back
+                View Back
               </button>
             )}
             {listing.imageBase64_front && showingBack && (
@@ -158,7 +158,7 @@ export default function ListingImage({ listing }) {
                   cursor: "pointer"
                 }}
               >
-                Front
+                View Front
               </button>
             )}
           </div>
