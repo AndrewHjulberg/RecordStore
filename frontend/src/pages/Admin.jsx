@@ -14,6 +14,8 @@ function Admin() {
   const [onSale, setOnSale] = useState(false);
   const [salePrice, setSalePrice] = useState("");
   const [message, setMessage] = useState("");
+  const [photo_front, setPhoto_front] = useState(null);
+  const [photo_back, setPhoto_back] = useState(null);
 
   const GENRES = [
     "Rock",
@@ -84,30 +86,33 @@ function Admin() {
     }
 
     try {
-      const body = {
-        upc,
-        title,
-        artist,
-        genre,
-        releaseYear: releaseYear ? parseInt(releaseYear) : null,  // NEW
-        price: parseInt(price),
-        condition,
-        imageUrl,
-        featured,
-        onSale,
-      };
-
+      const formData = new FormData();
+      formData.append("upc", upc);
+      formData.append("title", title);
+      formData.append("artist", artist);
+      formData.append("genre", genre);
+      formData.append("releaseYear", releaseYear ? parseInt(releaseYear) : "");
+      formData.append("price", price);
+      formData.append("condition", condition);
+      formData.append("imageUrl", imageUrl);
+      formData.append("featured", featured);
+      formData.append("onSale", onSale);
       if (onSale) {
-        body.salePrice = parseInt(salePrice);
+        formData.append("salePrice", salePrice);
+      }
+      if (photo_front) {
+        formData.append("photo_front", photo_front);
+      }
+      if (photo_back) {
+        formData.append("photo_back", photo_back);
       }
 
       const res = await fetch("http://localhost:5000/listings", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: formData,
       });
 
       if (res.ok) {
@@ -125,6 +130,8 @@ function Admin() {
         setFeatured(false);
         setOnSale(false);
         setSalePrice("");
+        setPhoto_front(null);
+        setPhoto_back(null);
       } else {
         const error = await res.json();
         setMessage("❌ Error: " + error.error);
@@ -214,9 +221,29 @@ function Admin() {
         <input
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="Image URL"
+          placeholder="Stock Image URL"
           required
         />
+
+        <label>
+          Album Front&nbsp;
+          <input
+            type = "file"
+            accept = "image/*"
+            capture = "environment"
+            onChange = {(e) => setPhoto_front(e.target.files[0])}
+          />
+        </label>
+
+        <label>
+          Album Back&nbsp;
+          <input
+            type = "file"
+            accept = "image/*"
+            capture = "environment"
+            onChange = {(e) => setPhoto_back(e.target.files[0])}
+          />
+        </label>
 
         <label>
           <input

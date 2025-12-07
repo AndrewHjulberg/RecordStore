@@ -2,6 +2,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import multer from "multer";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -24,6 +25,10 @@ function requireAdmin(req, res, next) {
   }
 }
 
+// Multer middleware for photo upload
+const storage = multer.memoryStorage();
+const upload = multer({storage});
+
 router.get("/discogs", async (req, res) => {
   const {upc} = req.query;
   const key = process.env.DISCOGS_KEY;
@@ -41,7 +46,7 @@ router.get("/discogs", async (req, res) => {
 });
 
 // ✅ POST route to add a listing (INT-friendly)
-router.post("/", requireAdmin, async (req, res) => {
+router.post("/", requireAdmin, upload.fields([{name: "photo_front"},{name: "photo_back"}]), async (req, res) => {
   const {
     title,
     artist,
@@ -56,6 +61,20 @@ router.post("/", requireAdmin, async (req, res) => {
   } = req.body;
 
   try {
+    let imageBase64_front = null;
+    let imageBase64_back = null;
+    let imageMime_front = null;
+    let imageMime_back = null;
+    if (req.files["photo_front"]) {
+      const file = req.files["photo_front"][0];
+      imageBase64_front = file.buffer.toString("base64");
+      imageMime_front = file.mimetype;
+    }
+    if (req.files["photo_back"]){
+      const file = req.files["photo_back"][0];
+      imageBase64_back = file.buffer.toString("base64");
+      imageMime_back = file.mimetype;
+    }
     const listing = await prisma.listing.create({
       data: {
         title,
@@ -64,6 +83,10 @@ router.post("/", requireAdmin, async (req, res) => {
         price: parseInt(price),
         condition,
         imageUrl,
+        imageBase64_front,
+        imageBase64_back,
+        imageMime_front,
+        imageMime_back,
         featured: !!featured,
         onSale: !!onSale,
         salePrice: onSale ? parseInt(salePrice) : null,
