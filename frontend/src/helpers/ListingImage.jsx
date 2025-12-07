@@ -32,6 +32,7 @@ export default function ListingImage({ listing }) {
               ? `data:${listing.imageMime_front || "image/jpeg"};base64,${listing.imageBase64_front}`
               : listing.imageUrl
           }
+          title="Click for full image"
           alt={listing.title}
           style={{
             width: "100%",
