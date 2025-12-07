@@ -19,20 +19,24 @@ model User {
 }
 
 model Listing {
-  id          Int         @id @default(autoincrement())
-  title       String
-  artist      String
-  price       Int
-  condition   String
-  imageUrl    String?
-  createdAt   DateTime    @default(now())
-  genre       String?
-  featured    Boolean     @default(false)
-  onSale      Boolean     @default(false)
-  salePrice   Int?
-  releaseYear Int?
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
+  id                Int         @id @default(autoincrement())
+  title             String
+  artist            String
+  price             Int
+  condition         String
+  imageUrl          String?
+  imageBase64_front String?
+  imageMime_front   String?
+  imageBase64_back  String?
+  imageMime_back    String?
+  createdAt         DateTime    @default(now())
+  genre             String?
+  featured          Boolean     @default(false)
+  onSale            Boolean     @default(false)
+  salePrice         Int?
+  releaseYear       Int?
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
 }
 
 model CartItem {

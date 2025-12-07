@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ListingImage  from "../helpers/ListingImage";
 
 function Shop() {
   const [listings, setListings] = useState([]);
@@ -154,7 +155,7 @@ function Shop() {
         </div>
       )}
 
-      <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
+      <div style={{ position: "relative", width: "100%", height: "200px", marginBottom: "15px" }}>
         <img
           src={listing.imageUrl}
           alt={listing.title}
@@ -162,11 +163,26 @@ function Shop() {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius: "8px"
+            borderRadius: "8px"     
           }}
         />
-      </div>
 
+        {/* Watermark overlay */}
+        <span
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%) rotate(-20deg)",
+            color: "rgba(255,255,255,0.6)",
+            fontSize: "1.2rem",
+            fontWeight: "bold",
+            pointerEvents: "none"
+          }}
+        >
+          Stock Photo
+        </span>
+      </div>      
       <h4>{listing.title}</h4>
       <p style={{ color: "#555" }}>{listing.artist}</p>
 
@@ -338,16 +354,8 @@ function Shop() {
               textAlign: "center"
             }}
           >
-            <img
-              src={selectedListing.imageUrl}
-              alt={selectedListing.title}
-              style={{
-                width: "100%", height: "250px",
-                objectFit: "cover",
-                borderRadius: "8px",
-                marginBottom: "15px"
-              }}
-            />
+            <ListingImage listing={selectedListing} />
+            
             <h2>{selectedListing.title}</h2>
             <p>{selectedListing.artist}</p>
             {selectedListing.genre && <p><em>{selectedListing.genre}</em></p>}

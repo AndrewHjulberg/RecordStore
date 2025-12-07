@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ListingImage from "../helpers/ListingImage";
 
 function Home() {
   const [listings, setListings] = useState([]);
@@ -9,6 +10,7 @@ function Home() {
   const [maxPrice, setMaxPrice] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [selectedListing, setSelectedListing] = useState(null);
+
 
   const fetchListings = async () => {
     try {
@@ -175,8 +177,7 @@ function Home() {
               maxWidth: "400px", width: "90%", textAlign: "center"
             }}
           >
-            <img src={selectedListing.imageUrl} alt={selectedListing.title}
-              style={{ width: "100%", height: "250px", objectFit: "cover", borderRadius: "8px", marginBottom: "15px" }} />
+            <ListingImage listing={selectedListing} />
             <h2>{selectedListing.title}</h2>
             <p>{selectedListing.artist}</p>
             {selectedListing.genre && (
