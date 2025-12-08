@@ -11,6 +11,8 @@ import Cancel from "./pages/Cancel";
 import Admin from "./pages/Admin";
 import Contact from "./pages/Contact";
 import ProtectedRoute from "./ProtectedRoute";
+import React from "react";
+import { GoogleLogin } from "@react-oauth/google";
 
 // ⭐ NEW — import your shop page
 import Shop from "./pages/Shop";
@@ -241,7 +243,7 @@ function App() {
           path="/settings"
           element={
             <ProtectedRoute>
-              <Settings />
+              <Settings user={user}/>
             </ProtectedRoute>
           }
         />

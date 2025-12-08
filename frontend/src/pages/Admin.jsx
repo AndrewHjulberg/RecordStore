@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { bestFitGenre, mapDiscogsGenre } from "../helpers/discogsGenreMap";
 
 function Admin() {
+  const [upc, setUPC] = useState("");
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [price, setPrice] = useState("");
@@ -12,6 +14,8 @@ function Admin() {
   const [onSale, setOnSale] = useState(false);
   const [salePrice, setSalePrice] = useState("");
   const [message, setMessage] = useState("");
+  const [photo_front, setPhoto_front] = useState(null);
+  const [photo_back, setPhoto_back] = useState(null);
 
   const GENRES = [
     "Rock",
@@ -27,6 +31,51 @@ function Admin() {
     "Reggae",
     "Soundtrack",
   ];
+  
+  const upcRef = useRef(null);
+  useEffect(()=> {
+    if (upcRef.current) {
+      upcRef.current.focus();
+    }
+  }, []);
+  const handleUPCBlur = async () => {
+    if (!upc) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/listings/discogs?upc=${upc}`);
+      if (!res.ok) throw new Error("Discogs lookup failed");
+      const data = await res.json();
+
+      if (data.results && data.results.length > 0) {
+        const release = data.results.find(r => r.country === "US") || data.results[0];
+        if (release){
+          //discogs has {artist} - {title} in the title attribute, so split them
+          let artistName = "";
+          let releaseTitle = "";
+          if (release.title){
+            const parts = release.title.split(" - ");
+            if (parts.length >= 2){
+              artistName = parts[0].trim();
+              releaseTitle = parts.slice(1).join(" - ").trim();
+            } else {
+              releaseTitle = release.title;
+            }
+          }
+          setTitle(releaseTitle);
+          setArtist(artistName);
+          setImageUrl(release.cover_image || "");
+          setReleaseYear(release.year || "");
+
+          const mapped = bestFitGenre(release.genre);
+          if (mapped && GENRES.includes(mapped)) {
+            setGenre(mapped);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,35 +86,40 @@ function Admin() {
     }
 
     try {
-      const body = {
-        title,
-        artist,
-        genre,
-        releaseYear: releaseYear ? parseInt(releaseYear) : null,  // NEW
-        price: parseInt(price),
-        condition,
-        imageUrl,
-        featured,
-        onSale,
-      };
-
+      const formData = new FormData();
+      formData.append("upc", upc);
+      formData.append("title", title);
+      formData.append("artist", artist);
+      formData.append("genre", genre);
+      formData.append("releaseYear", releaseYear ? parseInt(releaseYear) : "");
+      formData.append("price", price);
+      formData.append("condition", condition);
+      formData.append("imageUrl", imageUrl);
+      formData.append("featured", featured);
+      formData.append("onSale", onSale);
       if (onSale) {
-        body.salePrice = parseInt(salePrice);
+        formData.append("salePrice", salePrice);
+      }
+      if (photo_front) {
+        formData.append("photo_front", photo_front);
+      }
+      if (photo_back) {
+        formData.append("photo_back", photo_back);
       }
 
       const res = await fetch("http://localhost:5000/listings", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: formData,
       });
 
       if (res.ok) {
         setMessage("✅ Listing created successfully!");
 
         // reset form
+        setUPC("");
         setTitle("");
         setArtist("");
         setPrice("");
@@ -76,6 +130,8 @@ function Admin() {
         setFeatured(false);
         setOnSale(false);
         setSalePrice("");
+        setPhoto_front(null);
+        setPhoto_back(null);
       } else {
         const error = await res.json();
         setMessage("❌ Error: " + error.error);
@@ -100,6 +156,15 @@ function Admin() {
           maxWidth: "400px",
         }}
       >
+
+        <input
+          ref={upcRef}
+          value={upc}
+          onChange={(e) => setUPC(e.target.value)}
+          onBlur={handleUPCBlur}
+          placeholder="UPC"
+          required
+        />          
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -156,9 +221,29 @@ function Admin() {
         <input
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="Image URL"
+          placeholder="Stock Image URL"
           required
         />
+
+        <label>
+          Album Front&nbsp;
+          <input
+            type = "file"
+            accept = "image/*"
+            capture = "environment"
+            onChange = {(e) => setPhoto_front(e.target.files[0])}
+          />
+        </label>
+
+        <label>
+          Album Back&nbsp;
+          <input
+            type = "file"
+            accept = "image/*"
+            capture = "environment"
+            onChange = {(e) => setPhoto_back(e.target.files[0])}
+          />
+        </label>
 
         <label>
           <input

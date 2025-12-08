@@ -10,29 +10,34 @@ datasource db {
 model User {
   id        Int        @id @default(autoincrement())
   email     String     @unique
-  password  String
+  password  String?
   role      String     @default("customer")
   createdAt DateTime   @default(now())
   isAdmin   Boolean    @default(false)
   cartItems CartItem[]
   orders    Order[]
+  googleId  String? @unique
 }
 
 model Listing {
-  id          Int         @id @default(autoincrement())
-  title       String
-  artist      String
-  price       Int
-  condition   String
-  imageUrl    String?
-  createdAt   DateTime    @default(now())
-  genre       String?
-  featured    Boolean     @default(false)
-  onSale      Boolean     @default(false)
-  salePrice   Int?
-  releaseYear Int?
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
+  id                Int         @id @default(autoincrement())
+  title             String
+  artist            String
+  price             Int
+  condition         String
+  imageUrl          String?
+  imageBase64_front String?
+  imageMime_front   String?
+  imageBase64_back  String?
+  imageMime_back    String?
+  createdAt         DateTime    @default(now())
+  genre             String?
+  featured          Boolean     @default(false)
+  onSale            Boolean     @default(false)
+  salePrice         Int?
+  releaseYear       Int?
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
 }
 
 model CartItem {

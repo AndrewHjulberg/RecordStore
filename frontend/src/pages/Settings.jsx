@@ -1,7 +1,8 @@
 // SettingsPage.jsx
 import { useState } from "react";
 
-export default function SettingsPage() {
+export default function SettingsPage({user}) {
+
   const [activeSection, setActiveSection] = useState("account");
 
   // === Change Email ===
@@ -171,6 +172,8 @@ export default function SettingsPage() {
         <div className="w-2/3 p-6">
           {activeSection === "account" && (
             <div className="flex flex-col gap-6">
+             {!user?.googleId && (
+              <> 
               {/* Change Email */}
               <div className="border p-4 rounded-lg border-black">
                 <h2 className="text-2xl font-semibold mb-4">Change Email</h2>
@@ -224,6 +227,8 @@ export default function SettingsPage() {
                   {passwordSuccess && <p className="text-green-600">{passwordSuccess}</p>}
                 </form>
               </div>
+              </>
+              )}
             </div>
           )}
 

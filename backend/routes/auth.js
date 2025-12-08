@@ -3,6 +3,10 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 import { sendAccountCreatedEmail } from "../utils/email.js"; // <-- ADDED
 
 const router = express.Router();
@@ -16,6 +20,12 @@ router.post("/signup", async (req, res) => {
   const { email, password, isAdmin } = req.body;
 
   try {
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "Account already exists with this email." });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
@@ -31,7 +41,7 @@ router.post("/signup", async (req, res) => {
     );
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -58,7 +68,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.isAdmin },
+      { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -177,6 +187,71 @@ router.delete("/delete", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+router.post("/google-login", async (req, res) => {
+  const { credential, useGoogle } = req.body; //  add flag from frontend
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub, email } = payload;
+
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Create new Google account
+      user = await prisma.user.create({
+        data: {
+          email,
+          password: null,
+          isAdmin: false,
+          googleId: sub,
+        },
+      });
+    } else if (user.password && !user.googleId) {
+      // User has a password account but no Google link yet
+      if (useGoogle) {
+        //  User chose to switch to Google login
+        user = await prisma.user.update({
+          where: { email },
+          data: { googleId: sub, password: null }, // null out password
+        });
+      } else {
+        //  User declined Google login
+        return res.status(400).json({
+          error: "Account exists with this email.",
+          errorCode: "ACCOUNT_EXISTS", //  structured code
+        });
+      }
+    } else if (!user.googleId) {
+      // Link Google ID to existing account (already passwordless)
+      user = await prisma.user.update({
+        where: { email },
+        data: { googleId: sub },
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        googleId: user.googleId,
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const { password, ...safeUser } = user;
+    res.json({ token, user: safeUser });
+  } catch (err) {
+    console.error("Google login error:", err);
+    res.status(401).json({ error: "Invalid Google token" });
   }
 });
 
