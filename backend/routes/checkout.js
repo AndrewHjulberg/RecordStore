@@ -4,7 +4,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
-
+import { sendOrderConfirmationEmail } from "../utils/email.js";
 //console.log(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
@@ -84,26 +84,27 @@ export const stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle successful payment
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const userId = parseInt(session.metadata.userId);
 
-    // ✅ Prefer Stripe-collected shipping info, fallback to metadata
+    // Prefer Stripe shipping
     const shipping = session.shipping || {};
     const customerDetails = session.customer_details || {};
+
     const fullName =
       shipping?.name ||
       customerDetails?.name ||
       session.metadata?.fullName ||
       "Unknown";
+
     const addressObj = shipping?.address || customerDetails?.address || {};
     const address = addressObj.line1 || session.metadata?.address || "";
     const city = addressObj.city || session.metadata?.city || "";
     const state = addressObj.state || session.metadata?.state || "";
     const zip = addressObj.postal_code || session.metadata?.zip || "";
 
-    // Fetch cart items linked to this session
+    // Fetch cart
     const cartItems = await prisma.cartItem.findMany({
       where: { stripeSessionId: session.id },
       include: { listing: true },
@@ -115,9 +116,8 @@ export const stripeWebhook = async (req, res) => {
         0
       );
 
-
-      // ✅ Create order including real shipping info
-      await prisma.order.create({
+      // Create order
+      const order = await prisma.order.create({
         data: {
           userId,
           totalPrice,
@@ -133,10 +133,36 @@ export const stripeWebhook = async (req, res) => {
         },
       });
 
-      // Clear the user's cart
+      // Fetch user email
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      // Fetch full order including items + listings
+      const fullOrder = await prisma.order.findUnique({
+        where: { id: order.id },
+        include: {
+          items: {
+            include: {
+              listing: true,
+            },
+          },
+        },
+      });
+
+      // Send order email
+      if (user?.email) {
+        sendOrderConfirmationEmail(user.email, fullOrder).catch((err) =>
+          console.error("Order email error:", err)
+        );
+      }
+
+      // Clear cart
       await prisma.cartItem.deleteMany({ where: { stripeSessionId: session.id } });
 
-      console.log(`✅ Order created for user ${userId} with shipping: ${fullName}, ${address}, ${city}, ${state} ${zip}`);
+      console.log(
+        `✅ Order created for user ${userId} with shipping: ${fullName}, ${address}, ${city}, ${state} ${zip}`
+      );
     } else {
       console.warn(`⚠️ No cart items found for session ${session.id}`);
     }
@@ -144,6 +170,7 @@ export const stripeWebhook = async (req, res) => {
 
   res.json({ received: true });
 };
+
 
 
 // --- Optional router for normal usage ---
