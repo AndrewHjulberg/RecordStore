@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Orders from "./pages/Orders";
 import Cart from "./pages/Cart";
+import Contact from "./pages/Contact";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
 import Admin from "./pages/Admin";
@@ -204,6 +205,8 @@ function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/shop" element={<Shop />} />
+
+        <Route path="/contact" element={<Contact user={user} />} />
 
         <Route
           path="/login"
