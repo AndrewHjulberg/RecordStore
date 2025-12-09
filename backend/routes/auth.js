@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { OAuth2Client } from "google-auth-library";
+import { sendAccountCreatedEmail } from "../utils/email.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -33,6 +34,8 @@ router.post("/signup", async (req, res) => {
         isAdmin: isAdmin || false,
       },
     });
+
+    sendAccountCreatedEmail(user.email).catch(err => console.error("Email error:", err));
 
     const token = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.isAdmin, googleId: user.googleId },
