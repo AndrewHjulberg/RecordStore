@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import GoogleLinkPrompt from "../components/GoogleLinkPrompt"; //  reusable modal
 import useGoogleAuth from "../hooks/useGoogleAuth"; //  shared hook
@@ -9,6 +9,10 @@ function Login({ setIsLoggedIn, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const redirectTo = params.get("redirect") || "/";
+
 
   const {
     showPrompt,
@@ -34,7 +38,7 @@ function Login({ setIsLoggedIn, setUser }) {
         const decoded = JSON.parse(atob(data.token.split(".")[1]));
         setUser(decoded);
         setIsLoggedIn(true);
-        navigate("/orders");
+        navigate(redirectTo, { replace: true});
       } else {
         alert(data.error || "Login failed");
       }
