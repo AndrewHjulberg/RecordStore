@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import ListingImage from "../helpers/ListingImage";
+import { getGuestCart, addToGuestCart } from "../helpers/guestCart";
 
-function Home() {
+function Home({ cartItems, setCartItems, isLoggedIn }) {
   const [listings, setListings] = useState([]);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
@@ -10,7 +11,6 @@ function Home() {
   const [maxPrice, setMaxPrice] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [selectedListing, setSelectedListing] = useState(null);
-
 
   const fetchListings = async () => {
     try {
@@ -35,17 +35,56 @@ function Home() {
 
   const handleAddToCart = async (listingId) => {
     const token = localStorage.getItem("token");
+
     if (!token) {
-      setMessage("❌ Please log in to add items to your cart.");
+      // Guest: update localStorage
+      addToGuestCart(listingId);
+
+      // Also update shared state
+      const existingItem = cartItems.find(item => item.id === `guest-${listingId}`);
+      if (existingItem) {
+        setCartItems(cartItems.map(item =>
+          item.id === `guest-${listingId}`
+            ? { ...item, quantity: (item.quantity ?? 1) + 1 }
+            : item
+        ));
+      } else {
+        try {
+          const res = await fetch(`http://localhost:5000/listings/${listingId}`);
+          const data = await res.json();
+          setCartItems([...cartItems, { id: `guest-${listingId}`, listing: data, quantity: 1 }]);
+        } catch (err) {
+          console.error("Failed to fetch listing for cart:", err);
+        }
+      }
+
+      setMessage("🛒 Added to cart!");
+      setSelectedListing(null);
       return;
     }
+
+    // Logged-in user: POST to backend and update shared state
     try {
       const res = await fetch("http://localhost:5000/carts", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ listingId }),
       });
+
       if (res.ok) {
+        // Optimistically update shared state by adding the item
+        const existingItem = cartItems.find(item => item.listing.id === listingId);
+        if (existingItem) {
+          setCartItems(cartItems.map(item =>
+            item.listing.id === listingId
+              ? { ...item, quantity: (item.quantity ?? 1) + 1 }
+              : item
+          ));
+        } else {
+          const data = await res.json();
+          setCartItems([...cartItems, { ...data, quantity: 1 }]);
+        }
+
         setMessage("✅ Added to cart!");
         setSelectedListing(null);
       } else {
@@ -83,24 +122,22 @@ function Home() {
       textAlign: "center", backgroundColor: "#f9f9f9"
     }}>
       <div style={{ width: "100%", height: "200px", marginBottom: "15px" }}>
-        <img 
-          src={listing.imageUrl} 
-          alt={listing.title} 
-          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} 
+        <img
+          src={listing.imageUrl}
+          alt={listing.title}
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }}
         />
       </div>
 
-      {/* Only show title + artist */}
       <h4 style={{ margin: "5px 0" }}>{listing.title}</h4>
       <p style={{ margin: "5px 0", color: "#555" }}>{listing.artist}</p>
 
-      {/* View button only */}
       <button
         onClick={() => setSelectedListing(listing)}
-        style={{ 
-          marginTop: "10px", padding: "8px 12px", 
-          backgroundColor: "#000", color: "#fff", 
-          border: "none", borderRadius: "5px", cursor: "pointer" 
+        style={{
+          marginTop: "10px", padding: "8px 12px",
+          backgroundColor: "#000", color: "#fff",
+          border: "none", borderRadius: "5px", cursor: "pointer"
         }}
       >
         View Record
@@ -108,40 +145,29 @@ function Home() {
     </div>
   );
 
-
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
       {message && (
         <div style={{ marginBottom: "20px", padding: "10px", background: "#f0f0f0", borderRadius: "5px" }}>
           {message}
         </div>
       )}
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section style={{ textAlign: "center", padding: "40px 20px" }}>
-        <h2 style={{ fontSize: "3rem", fontWeight: "bold", marginBottom: "20px" }}>
-          Explore the Sound of Time
-        </h2>
+        <h2 style={{ fontSize: "3rem", fontWeight: "bold", marginBottom: "20px" }}>Explore the Sound of Time</h2>
         <p style={{ maxWidth: "600px", margin: "0 auto 20px", color: "#555" }}>
           Discover handpicked vintage records from across the globe. Every spin tells a story.
         </p>
-        <div style={{ textAlign: "center", marginTop: "25px" }}>
-          <button
-            onClick={() => window.location.href = "/shop"}
-            style={{
-              padding: "12px 22px",
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "1rem",
-              cursor: "pointer"
-            }}
-          >
-            Browse All Records
-          </button>
-        </div>
-
+        <button
+          onClick={() => window.location.href = "/shop"}
+          style={{
+            padding: "12px 22px", backgroundColor: "#000", color: "#fff",
+            border: "none", borderRadius: "6px", fontSize: "1rem", cursor: "pointer"
+          }}
+        >
+          Browse All Records
+        </button>
       </section>
 
       {/* Featured Finds */}
@@ -180,15 +206,8 @@ function Home() {
             <ListingImage listing={selectedListing} />
             <h2>{selectedListing.title}</h2>
             <p>{selectedListing.artist}</p>
-            {selectedListing.genre && (
-              <p><em>{selectedListing.genre}</em></p>
-            )}
-
-            {/* Release Year */}
-            {selectedListing.releaseYear && (
-              <p>Released: {selectedListing.releaseYear}</p>
-            )}
-
+            {selectedListing.genre && <p><em>{selectedListing.genre}</em></p>}
+            {selectedListing.releaseYear && <p>Released: {selectedListing.releaseYear}</p>}
             <p>
               {selectedListing.onSale && selectedListing.salePrice
                 ? <>
@@ -200,7 +219,6 @@ function Home() {
                 : <>${selectedListing.price}</>
               }
             </p>
-
             <p>Condition: {selectedListing.condition}</p>
 
             <button

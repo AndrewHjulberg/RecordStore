@@ -79,4 +79,55 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// backend/routes/carts.js
+router.post("/migrate", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token provided" });
+
+  let userId;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    userId = decoded.userId; // Make sure this matches your JWT payload
+  } catch (err) {
+    return res.status(403).json({ error: "Invalid token" });
+  }
+
+  const { items } = req.body; // [{ listingId }]
+  if (!items || !Array.isArray(items)) return res.status(400).json({ error: "No items to migrate" });
+
+  try {
+    const migratedItems = [];
+
+    for (const item of items) {
+      // Check if the listing already exists in the user's cart
+      const exists = await prisma.cartItem.findFirst({
+        where: {
+          userId,
+          listingId: item.listingId,
+        },
+        include: { listing: true },
+      });
+
+      if (exists) {
+        migratedItems.push(exists); // already in cart, include it in response
+      } else {
+        const newItem = await prisma.cartItem.create({
+          data: {
+            userId,
+            listingId: item.listingId,
+          },
+          include: { listing: true },
+        });
+        migratedItems.push(newItem);
+      }
+    }
+
+    res.json(migratedItems); // Return full cart items including any duplicates avoided
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to migrate guest cart" });
+  }
+});
+
+
 export default router;

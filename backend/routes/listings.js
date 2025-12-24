@@ -268,5 +268,21 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ✅ GET /listings/:id — fetch a single listing by ID
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!listing) return res.status(404).json({ error: "Listing not found" });
+
+    res.json(listing);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch listing" });
+  }
+});
 
 export default router;
