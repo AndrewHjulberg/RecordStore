@@ -146,7 +146,7 @@ function Home({ cartItems, setCartItems, isLoggedIn }) {
   );
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#fff", color: "#000", padding: "20px" }}>
       {message && (
         <div style={{ marginBottom: "20px", padding: "10px", background: "#f0f0f0", borderRadius: "5px" }}>
           {message}
