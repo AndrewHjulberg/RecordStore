@@ -100,7 +100,101 @@ router.post("/", requireAdmin, upload.fields([{name: "photo_front"},{name: "phot
     res.status(500).json({ error: "Could not create listing" });
   }
 });
+// ✅ GET /listings/:id — fetch a single listing
+router.get("/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
 
+    const listing = await prisma.listing.findUnique({
+      where: { id }
+    });
+
+    if (!listing) {
+      return res.status(404).json({ error: "Listing not found" });
+    }
+
+    res.json(listing);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch listing" });
+  }
+});
+
+// ✅ PUT /listings/:id — update a listing
+router.put("/:id", requireAdmin, upload.fields([{name: "photo_front"}, {name: "photo_back"}]), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    const {
+      title,
+      artist,
+      genre,
+      price,
+      condition,
+      imageUrl,
+      featured,
+      onSale,
+      salePrice,
+      releaseYear,
+    } = req.body;
+
+    let imageBase64_front = null;
+    let imageBase64_back = null;
+    let imageMime_front = null;
+    let imageMime_back = null;
+
+    if (req.files["photo_front"]) {
+      const file = req.files["photo_front"][0];
+      imageBase64_front = file.buffer.toString("base64");
+      imageMime_front = file.mimetype;
+    }
+
+    if (req.files["photo_back"]) {
+      const file = req.files["photo_back"][0];
+      imageBase64_back = file.buffer.toString("base64");
+      imageMime_back = file.mimetype;
+    }
+
+    const updated = await prisma.listing.update({
+      where: { id },
+      data: {
+        title,
+        artist,
+        genre,
+        price: parseInt(price),
+        condition,
+        imageUrl,
+        featured: !!featured,
+        onSale: !!onSale,
+        salePrice: onSale ? parseInt(salePrice) : null,
+        releaseYear: releaseYear ? parseInt(releaseYear) : null,
+        ...(imageBase64_front && { imageBase64_front, imageMime_front }),
+        ...(imageBase64_back && { imageBase64_back, imageMime_back }),
+      },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update listing" });
+  }
+});
+
+// DELETE a listing
+router.delete("/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    const deleted = await prisma.listing.delete({
+      where: { id },
+    });
+
+    res.json({ message: "Listing deleted", deleted });
+  } catch (err) {
+    console.error("Delete error:", err);
+    res.status(500).json({ error: "Failed to delete listing" });
+  }
+});
 
 // ✅ GET /listings — now supports decade filtering
 router.get("/", async (req, res) => {

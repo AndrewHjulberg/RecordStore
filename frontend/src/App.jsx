@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
 import Admin from "./pages/Admin";
+import Listing from "./pages/Listing";
 import ProtectedRoute from "./ProtectedRoute";
 import React from "react";
 import { GoogleLogin } from "@react-oauth/google";
@@ -204,7 +205,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
 
-        <Route path="/shop" element={<Shop />} />
+        <Route path="/shop" element={<Shop user={user}/>} />
 
         <Route path="/contact" element={<Contact user={user} />} />
 
@@ -256,6 +257,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/listings/:id" element={<ProtectedRoute adminOnly={true}><Listing user={user} /></ProtectedRoute>} />
       </Routes>
     </div>
   );

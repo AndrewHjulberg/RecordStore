@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ListingImage  from "../helpers/ListingImage";
 
-function Shop() {
+function Shop({user}) {
+  const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [message, setMessage] = useState("");
 
@@ -125,7 +127,7 @@ function Shop() {
   const startIndex = (currentPage - 1) * listingsPerPage;
   const paginatedListings = sortedListings.slice(startIndex, startIndex + listingsPerPage);
 
-  const renderListingCard = (listing) => (
+  const renderListingCard = (listing, user) => (
     <div
       key={listing.id}
       style={{
@@ -137,6 +139,27 @@ function Shop() {
         backgroundColor: "#f9f9f9"
       }}
     >
+      {/* ADMIN EDIT ICON */}
+      {user?.isAdmin && (
+        <div
+          title = "Edit Listing"
+          onClick={() => navigate(`/listings/${listing.id}`)}
+          style={{
+            position: "absolute",
+            top: "10px",
+            left: "10px",
+            backgroundColor: "rgba(0,0,0,0.7)",
+            color: "#fff",
+            padding: "6px",
+            borderRadius: "50%",
+            cursor: "pointer",
+            zIndex: 10
+          }}
+        >
+          ✏️
+        </div>
+      )}
+
       {listing.onSale && listing.salePrice && (
         <div
           style={{
@@ -291,7 +314,7 @@ function Shop() {
       {/* GRID */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "25px" }}>
         {paginatedListings.length > 0 ? (
-          paginatedListings.map(renderListingCard)
+          paginatedListings.map((listing) => renderListingCard(listing, user))
         ) : (
           <p style={{ textAlign: "center", width: "100%" }}>No records found.</p>
         )}
