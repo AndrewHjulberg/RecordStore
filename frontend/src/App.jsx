@@ -12,37 +12,64 @@ import Cancel from "./pages/Cancel";
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./ProtectedRoute";
 import React from "react";
-import { GoogleLogin } from "@react-oauth/google";
 
-// ⭐ NEW — import your shop page
 import Shop from "./pages/Shop";
-
-// ⭐ NEW — settings page placeholder
 import Settings from "./pages/Settings";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false); // ⭐ NEW
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
+  // ⭐ Initialize login state synchronously
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (!token) return false;
+    try {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      return !!decoded;
+    } catch {
+      return false;
+    }
+  });
+
+  const [user, setUser] = useState(() => {
+    if (!token) return null;
+    try {
+      return JSON.parse(atob(token.split(".")[1]));
+    } catch {
+      return null;
+    }
+  });
+
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // ⭐ Shared cart state across the app
+  const [cartItems, setCartItems] = useState([]);
+
+  // Optional: keep login state in sync across tabs
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = JSON.parse(atob(token.split(".")[1]));
-        setUser(decoded);
-        setIsLoggedIn(true);
-      } catch (err) {
-        console.error("Invalid token:", err);
+    const handleStorageChange = () => {
+      const t = localStorage.getItem("token");
+      if (t) {
+        try {
+          const decoded = JSON.parse(atob(t.split(".")[1]));
+          setUser(decoded);
+          setIsLoggedIn(true);
+        } catch {
+          setUser(null);
+          setIsLoggedIn(false);
+        }
+      } else {
         setUser(null);
         setIsLoggedIn(false);
       }
-    }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    setCartItems([]);
     setIsLoggedIn(false);
     setUser(null);
     setShowDropdown(false);
@@ -52,7 +79,7 @@ function App() {
   const linkStyle = {
     textDecoration: "none",
     color: "#000",
-    cursor: "pointer"
+    cursor: "pointer",
   };
 
   return (
@@ -65,14 +92,14 @@ function App() {
           alignItems: "center",
           padding: "20px 50px",
           borderBottom: "1px solid #ddd",
-          position: "relative"
+          position: "relative",
         }}
       >
         <h1
           style={{
             fontFamily: "Impact, sans-serif",
             fontSize: "2.5rem",
-            letterSpacing: "2px"
+            letterSpacing: "2px",
           }}
         >
           VINYLVERSE
@@ -84,29 +111,41 @@ function App() {
             gap: "25px",
             textTransform: "uppercase",
             fontSize: "0.9rem",
-            alignItems: "center"
+            alignItems: "center",
           }}
         >
-          <Link to="/" style={linkStyle}>Home</Link>
-          <Link to="/shop" style={linkStyle}>Shop</Link>
+          <Link to="/" style={linkStyle}>
+            Home
+          </Link>
+          <Link to="/shop" style={linkStyle}>
+            Shop
+          </Link>
 
-          {/* Cart stays where it was */}
-          {isLoggedIn && <Link to="/cart" style={linkStyle}>Cart</Link>}
+          {/* Cart always visible */}
+          <Link to="/cart" style={linkStyle}>
+            Cart
+          </Link>
 
-          <Link to="/about" style={linkStyle}>About</Link>
-          <Link to="/contact" style={linkStyle}>Contact</Link>
+          <Link to="/about" style={linkStyle}>
+            About
+          </Link>
+          <Link to="/contact" style={linkStyle}>
+            Contact
+          </Link>
 
           {user?.isAdmin && <Link to="/admin" style={linkStyle}>Admin</Link>}
 
-          {/* User NOT logged in */}
           {!isLoggedIn && (
             <>
-              <Link to="/login" style={linkStyle}>Login</Link>
-              <Link to="/signup" style={linkStyle}>Create Account</Link>
+              <Link to="/login" style={linkStyle}>
+                Login
+              </Link>
+              <Link to="/signup" style={linkStyle}>
+                Create Account
+              </Link>
             </>
           )}
 
-          {/* User LOGGED IN: profile icon + dropdown */}
           {isLoggedIn && (
             <div style={{ position: "relative" }}>
               <button
@@ -122,7 +161,7 @@ function App() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: 0
+                  padding: 0,
                 }}
               >
                 <svg
@@ -140,7 +179,6 @@ function App() {
                 </svg>
               </button>
 
-
               {showDropdown && (
                 <div
                   style={{
@@ -153,7 +191,7 @@ function App() {
                     borderRadius: "6px",
                     width: "150px",
                     boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                    zIndex: 100
+                    zIndex: 100,
                   }}
                 >
                   <Link
@@ -163,7 +201,7 @@ function App() {
                       display: "block",
                       padding: "8px 15px",
                       color: "#000",
-                      textDecoration: "none"
+                      textDecoration: "none",
                     }}
                   >
                     Order History
@@ -176,7 +214,7 @@ function App() {
                       display: "block",
                       padding: "8px 15px",
                       color: "#000",
-                      textDecoration: "none"
+                      textDecoration: "none",
                     }}
                   >
                     Settings
@@ -188,7 +226,7 @@ function App() {
                       display: "block",
                       padding: "8px 15px",
                       color: "#000",
-                      cursor: "pointer"
+                      cursor: "pointer",
                     }}
                   >
                     Logout
@@ -202,20 +240,11 @@ function App() {
 
       {/* Routes */}
       <Routes>
-        <Route path="/" element={<Home />} />
-
+        <Route path="/" element={<Home cartItems={cartItems} setCartItems={setCartItems} />} />
         <Route path="/shop" element={<Shop />} />
-
         <Route path="/contact" element={<Contact user={user} />} />
-
-        <Route
-          path="/login"
-          element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />}
-        />
-        <Route
-          path="/signup"
-          element={<Signup setIsLoggedIn={setIsLoggedIn} setUser={setUser} />}
-        />
+        <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
+        <Route path="/signup" element={<Signup setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
 
         <Route
           path="/orders"
@@ -226,24 +255,20 @@ function App() {
           }
         />
 
+        {/* Cart page now uses shared cart state */}
         <Route
           path="/cart"
-          element={
-            <ProtectedRoute>
-              <Cart />
-            </ProtectedRoute>
-          }
+          element={<Cart cartItems={cartItems} setCartItems={setCartItems} user={user} isLoggedIn={isLoggedIn} />}
         />
 
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
 
-        {/* ⭐ NEW SETTINGS PAGE */}
         <Route
           path="/settings"
           element={
             <ProtectedRoute>
-              <Settings user={user}/>
+              <Settings user={user} />
             </ProtectedRoute>
           }
         />
