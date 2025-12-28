@@ -101,7 +101,7 @@ router.post("/", requireAdmin, upload.fields([{name: "photo_front"},{name: "phot
   }
 });
 // ✅ GET /listings/:id — fetch a single listing
-router.get("/:id", requireAdmin, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 

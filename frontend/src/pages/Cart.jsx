@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getGuestCart, clearGuestCart } from "../helpers/guestCart";
+import { getGuestCart, clearGuestCart, removeFromGuestCart } from "../helpers/guestCart";
 
 function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const hasMigratedRef = useRef(false);
 
   // Load cart items when component mounts or token changes
   useEffect(() => {
     const fetchCart = async () => {
-      if (cartItems.length > 0) {
+      // ✅ Only skip fetch if cart items are already hydrated
+      if (cartItems.length > 0 && cartItems.every(item => item.listing)) {
         setLoading(false);
         return;
       }
@@ -74,13 +76,17 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
   useEffect(() => {
     const migrateGuestCart = async () => {
       if (!token) return;
+      if (hasMigratedRef.current) return; // 🔒 hard stop
 
-      const guestItems = cartItems.filter((item) => typeof item.id === "string" && item.id.startsWith("guest-"));
+      const guestItems = cartItems.filter(
+        item => typeof item.id === "string" && item.id.startsWith("guest-")
+      );
+
       if (guestItems.length === 0) return;
 
-      try {
-        clearGuestCart();
+      hasMigratedRef.current = true; // 🔒 lock migration
 
+      try {
         const res = await fetch("http://localhost:5000/carts/migrate", {
           method: "POST",
           headers: {
@@ -88,47 +94,44 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            items: guestItems.map((item) => ({
+            items: guestItems.map(item => ({
               listingId: item.listing.id,
             })),
           }),
         });
 
-        const data = await res.json(); // backend returns real cart items
+        const data = await res.json();
 
-        // Merge without duplicates
-        const nonGuestItems = cartItems.filter((item) => !item.id.startsWith("guest-"));
-        const merged = [...nonGuestItems];
-
-        data.forEach((newItem) => {
-          if (!merged.some((item) => item.id === newItem.id)) {
-            merged.push(newItem);
-          }
-        });
-
-        setCartItems(merged);
+        // ✅ Backend is source of truth
+        clearGuestCart();
+        setCartItems(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to migrate guest cart:", err);
+        hasMigratedRef.current = false; // allow retry if it fails
       }
     };
 
     migrateGuestCart();
-  }, [token]); // removed cartItems dependency to avoid double calls
+  }, [token]); // ❗ DO NOT add cartItems
 
+
+  // Remove item from cart
   const removeFromCart = async (cartItemId) => {
+    // ✅ Per-item removal for guest cart
     if (!token && cartItemId.startsWith("guest-")) {
       const listingId = cartItemId.replace("guest-", "");
-      clearGuestCart(listingId);
-      setCartItems((prev) => prev.filter((item) => item.id !== cartItemId));
+      removeFromGuestCart(listingId); // <- NEW
+      setCartItems(prev => prev.filter(item => item.id !== cartItemId));
       return;
     }
 
+    // Logged-in user removal
     try {
       const res = await fetch(`http://localhost:5000/carts/${cartItemId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setCartItems((prev) => prev.filter((item) => item.id !== cartItemId));
+      if (res.ok) setCartItems(prev => prev.filter(item => item.id !== cartItemId));
       else setMessage("❌ Could not remove item.");
     } catch (err) {
       console.error(err);
@@ -152,10 +155,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          items: cartItems.map((item) => ({
-            listingId: item.listing.id,
-            price: item.listing.salePrice ?? item.listing.price,
-          })),
+          items: cartItems.map(item => ({ listingId: item.listing.id, price: item.listing.salePrice ?? item.listing.price })),
           fullName: "Customer Name",
           address: "123 Main St",
           city: "City",
@@ -174,11 +174,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
 
   if (loading) return <p>Loading cart...</p>;
 
-  const totalPrice = cartItems.reduce((sum, item) => { 
-    if (!item.listing) return sum;
-    return sum + (item.listing.salePrice ?? item.listing.price);
-  }, 0);
-
+  const totalPrice = cartItems.reduce((sum, item) => item.listing ? sum + (item.listing.salePrice ?? item.listing.price) : sum, 0);
 
   return (
     <div style={{ maxWidth: "900px", margin: "50px auto", padding: "20px", fontFamily: "sans-serif" }}>
@@ -190,25 +186,9 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
       ) : (
         <>
           <div style={{ display: "grid", gap: "20px" }}>
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex",
-                  gap: "15px",
-                  border: "1px solid #ddd",
-                  padding: "15px",
-                  borderRadius: "8px",
-                  backgroundColor: "#fff",
-                }}
-              >
-                {item.listing.imageUrl && (
-                  <img
-                    src={item.listing.imageUrl}
-                    alt={item.listing.title}
-                    style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "6px" }}
-                  />
-                )}
+            {cartItems.map(item => (
+              <div key={item.id} style={{ display: "flex", gap: "15px", border: "1px solid #ddd", padding: "15px", borderRadius: "8px", backgroundColor: "#fff" }}>
+                {item.listing.imageUrl && <img src={item.listing.imageUrl} alt={item.listing.title} style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "6px" }} />}
                 <div style={{ flex: 1 }}>
                   <h2 style={{ margin: "0 0 5px 0" }}>{item.listing.title || "Unknown Title"}</h2>
                   <p style={{ margin: "0 0 5px 0", color: "#555" }}>{item.listing.artist || "Unknown Artist"}</p>
@@ -216,26 +196,14 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
                   <p style={{ margin: "5px 0", fontWeight: "bold" }}>
                     {item.listing.salePrice ? (
                       <>
-                        <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
-                          ${item.listing.price?.toFixed(2) ?? "0.00"}
-                        </span>
+                        <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>${item.listing.price?.toFixed(2) ?? "0.00"}</span>
                         <span>${item.listing.salePrice?.toFixed(2) ?? "0.00"}</span>
                       </>
                     ) : (
                       <>${item.listing.price?.toFixed(2) ?? "0.00"}</>
                     )}
                   </p>
-                  <button
-                    onClick={() => removeFromCart(item.id)}
-                    style={{
-                      padding: "5px 10px",
-                      backgroundColor: "#dc3545",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                    }}
-                  >
+                  <button onClick={() => removeFromCart(item.id)} style={{ padding: "5px 10px", backgroundColor: "#dc3545", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}>
                     Remove
                   </button>
                 </div>
@@ -245,17 +213,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
 
           <h3 style={{ marginTop: "20px", textAlign: "right" }}>Total: ${totalPrice.toFixed(2)}</h3>
           <div style={{ textAlign: "right" }}>
-            <button
-              onClick={handleProceedToCheckout}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#007bff",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-            >
+            <button onClick={handleProceedToCheckout} style={{ padding: "10px 20px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}>
               Proceed to Checkout
             </button>
           </div>

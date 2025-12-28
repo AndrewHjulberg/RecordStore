@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import ListingImage from "../helpers/ListingImage";
-import { getGuestCart, addToGuestCart } from "../helpers/guestCart";
+import { addToGuestCart } from "../helpers/guestCart";
 
-function Home({ cartItems, setCartItems, isLoggedIn }) {
+function Home({ isLoggedIn }) {
   const [listings, setListings] = useState([]);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
@@ -36,66 +36,40 @@ function Home({ cartItems, setCartItems, isLoggedIn }) {
   const handleAddToCart = async (listingId) => {
     const token = localStorage.getItem("token");
 
+    // ✅ Guest user
     if (!token) {
-      // Guest: update localStorage
       addToGuestCart(listingId);
-
-      // Also update shared state
-      const existingItem = cartItems.find(item => item.id === `guest-${listingId}`);
-      if (existingItem) {
-        setCartItems(cartItems.map(item =>
-          item.id === `guest-${listingId}`
-            ? { ...item, quantity: (item.quantity ?? 1) + 1 }
-            : item
-        ));
-      } else {
-        try {
-          const res = await fetch(`http://localhost:5000/listings/${listingId}`);
-          const data = await res.json();
-          setCartItems([...cartItems, { id: `guest-${listingId}`, listing: data, quantity: 1 }]);
-        } catch (err) {
-          console.error("Failed to fetch listing for cart:", err);
-        }
-      }
-
       setMessage("🛒 Added to cart!");
       setSelectedListing(null);
       return;
     }
 
-    // Logged-in user: POST to backend and update shared state
+    // ✅ Logged-in user
     try {
       const res = await fetch("http://localhost:5000/carts", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ listingId }),
       });
 
-      if (res.ok) {
-        // Optimistically update shared state by adding the item
-        const existingItem = cartItems.find(item => item.listing.id === listingId);
-        if (existingItem) {
-          setCartItems(cartItems.map(item =>
-            item.listing.id === listingId
-              ? { ...item, quantity: (item.quantity ?? 1) + 1 }
-              : item
-          ));
-        } else {
-          const data = await res.json();
-          setCartItems([...cartItems, { ...data, quantity: 1 }]);
-        }
-
-        setMessage("✅ Added to cart!");
-        setSelectedListing(null);
-      } else {
-        const error = await res.json();
-        setMessage("❌ Error adding to cart: " + error.error);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Add to cart failed:", text);
+        setMessage("❌ Could not add item to cart.");
+        return;
       }
+
+      setMessage("✅ Added to cart!");
+      setSelectedListing(null);
     } catch (err) {
       console.error(err);
-      setMessage("❌ Something went wrong.");
+      setMessage("❌ Network error.");
     }
   };
+
 
   const sortedListings = [...listings].sort((a, b) => {
     switch (sortOption) {

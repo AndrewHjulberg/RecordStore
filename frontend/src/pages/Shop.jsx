@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ListingImage  from "../helpers/ListingImage";
+import { getGuestCart, addToGuestCart } from "../helpers/guestCart";
 
-function Shop({user}) {
+
+function Shop({user, cartItems, setCartItems}) {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [message, setMessage] = useState("");
@@ -66,19 +68,44 @@ function Shop({user}) {
 
   const handleAddToCart = async (listingId) => {
     const token = localStorage.getItem("token");
+
+    // ✅ GUEST CART
     if (!token) {
-      setMessage("❌ Please log in to add items to your cart.");
+      addToGuestCart(listingId); // add to localStorage
+      // fetch full listing data so Cart can display it immediately
+      try {
+        const res = await fetch(`http://localhost:5000/listings/${listingId}`);
+        const data = await res.json();
+        setCartItems((prev) => [
+          ...prev,
+          { id: `guest-${listingId}`, listing: data },
+        ]);
+        setMessage("✅ Added to cart!");
+        setSelectedListing(null);
+      } catch (err) {
+        console.error("Failed to fetch listing for guest cart:", err);
+        setMessage("❌ Could not add item to cart.");
+      }
       return;
     }
+
+    // ✅ LOGGED-IN USER
     try {
       const res = await fetch("http://localhost:5000/carts", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ listingId }),
       });
+
       if (res.ok) {
         setMessage("✅ Added to cart!");
         setSelectedListing(null);
+        // optionally update cartItems after adding
+        const addedItem = await res.json();
+        setCartItems((prev) => [...prev, addedItem]);
       } else {
         const error = await res.json();
         setMessage("❌ Error adding to cart: " + error.error);
@@ -88,6 +115,8 @@ function Shop({user}) {
       setMessage("❌ Something went wrong.");
     }
   };
+
+
 
   // ⭐ Apply decade filter (corrected)
   const applyDecadeFilter = (items) => {
