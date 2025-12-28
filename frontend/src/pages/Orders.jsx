@@ -127,8 +127,15 @@ function Orders() {
                       </div>
 
                       <div style={{ fontWeight: "bold" }}>
-                        ${item.price?.toFixed(2)}
+                        $
+                        {(
+                          item.price ??
+                          item.listing?.salePrice ??
+                          item.listing?.price ??
+                          0
+                        ).toFixed(2)}
                       </div>
+
                     </div>
                   ))}
 
@@ -198,7 +205,16 @@ function Orders() {
                           </div>
                         </div>
 
-                        <div>${item.price?.toFixed(2)}</div>
+                        <div>
+                          $
+                          {(
+                            item.price ??
+                            item.listing?.salePrice ??
+                            item.listing?.price ??
+                            0
+                          ).toFixed(2)}
+                        </div>
+
                       </div>
                     ))}
 
