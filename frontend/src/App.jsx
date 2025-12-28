@@ -242,7 +242,7 @@ function App() {
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home cartItems={cartItems} setCartItems={setCartItems} />} />
-        <Route path="/shop" element={<Shop user={user} />} />
+        <Route path="/shop" element={<Shop user={user} cartItems={cartItems} setCartItems={setCartItems} />} />
         <Route path="/contact" element={<Contact user={user} />} />
         <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
         <Route path="/signup" element={<Signup setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
