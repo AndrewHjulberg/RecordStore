@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import GoogleLinkPrompt from "../components/GoogleLinkPrompt"; //  reusable modal
 import useGoogleAuth from "../hooks/useGoogleAuth"; //  shared hook
-import "../assets/css/Login.css";
+import "../assets/css/login.css";
 
 function Login({ setIsLoggedIn, setUser }) {
   const [email, setEmail] = useState("");
