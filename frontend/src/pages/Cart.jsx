@@ -31,7 +31,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
           const listings = await Promise.all(
             guestItems.map(async (item) => {
               try {
-                const res = await fetch(`http://localhost:5000/listings/${item.listingId}`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/listings/${item.listingId}`);
                 const data = await res.json();
                 return {
                   id: `guest-${item.listingId}`,
@@ -56,7 +56,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
 
       // Logged-in user cart
       try {
-        const res = await fetch("http://localhost:5000/carts", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/carts`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -87,7 +87,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
       hasMigratedRef.current = true; // 🔒 lock migration
 
       try {
-        const res = await fetch("http://localhost:5000/carts/migrate", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/carts/migrate`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -127,7 +127,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
 
     // Logged-in user removal
     try {
-      const res = await fetch(`http://localhost:5000/carts/${cartItemId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/carts/${cartItemId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -151,7 +151,7 @@ function Cart({ cartItems, setCartItems, user, isLoggedIn }) {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/checkout", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

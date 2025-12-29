@@ -22,7 +22,7 @@ function Success() {
       try {
         // Retry a few times in case webhook hasn’t finished
         for (let attempt = 0; attempt < 5; attempt++) {
-          const res = await fetch(`http://localhost:5000/orders/session/${sessionId}`, {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/orders/session/${sessionId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 

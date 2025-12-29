@@ -42,7 +42,7 @@ function Admin() {
     if (!upc) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/listings/discogs?upc=${upc}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/listings/discogs?upc=${upc}`);
       if (!res.ok) throw new Error("Discogs lookup failed");
       const data = await res.json();
 
@@ -107,7 +107,7 @@ function Admin() {
         formData.append("photo_back", photo_back);
       }
 
-      const res = await fetch("http://localhost:5000/listings", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/listings`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

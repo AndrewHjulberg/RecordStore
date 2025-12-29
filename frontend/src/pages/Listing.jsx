@@ -70,7 +70,7 @@ export default function Listing({ user }) {
             return;
         }
 
-        fetch(`http://localhost:5000/listings/${id}`, {
+        fetch(`${import.meta.env.VITE_API_URL}/listings/${id}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -113,7 +113,7 @@ export default function Listing({ user }) {
         if (!upc) return;
 
         try {
-            const res = await fetch(`http://localhost:5000/listings/discogs?upc=${upc}`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/listings/discogs?upc=${upc}`);
             if (!res.ok) throw new Error("Discogs lookup failed");
             const data = await res.json();
 
@@ -185,7 +185,7 @@ export default function Listing({ user }) {
                 formData.append("photo_back", photo_back);
             }
 
-            const res = await fetch(`http://localhost:5000/listings/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/listings/${id}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -223,7 +223,7 @@ export default function Listing({ user }) {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/listings/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/listings/${id}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,
