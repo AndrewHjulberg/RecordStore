@@ -20,7 +20,7 @@ function Home({ isLoggedIn }) {
       if (minPrice) params.append("minPrice", minPrice);
       if (maxPrice) params.append("maxPrice", maxPrice);
 
-      const res = await fetch(`http://localhost:5000/listings?${params.toString()}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/listings?${params.toString()}`);
       const data = await res.json();
       setListings(data);
     } catch (err) {
@@ -46,7 +46,7 @@ function Home({ isLoggedIn }) {
 
     // ✅ Logged-in user
     try {
-      const res = await fetch("http://localhost:5000/carts", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/carts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

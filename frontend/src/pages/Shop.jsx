@@ -52,7 +52,7 @@ function Shop({user, cartItems, setCartItems}) {
       if (maxPrice) params.append("maxPrice", maxPrice);
       if (decade) params.append("decade", decade);
 
-      const res = await fetch(`http://localhost:5000/listings?${params.toString()}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/listings?${params.toString()}`);
       const data = await res.json();
       setListings(data);
       setCurrentPage(1);
@@ -74,7 +74,7 @@ function Shop({user, cartItems, setCartItems}) {
       addToGuestCart(listingId); // add to localStorage
       // fetch full listing data so Cart can display it immediately
       try {
-        const res = await fetch(`http://localhost:5000/listings/${listingId}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/listings/${listingId}`);
         const data = await res.json();
         setCartItems((prev) => [
           ...prev,
@@ -91,7 +91,7 @@ function Shop({user, cartItems, setCartItems}) {
 
     // ✅ LOGGED-IN USER
     try {
-      const res = await fetch("http://localhost:5000/carts", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/carts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -44,7 +44,7 @@ export default function SettingsPage({user}) {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/auth/email", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/email`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +87,7 @@ export default function SettingsPage({user}) {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/auth/password", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/password`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export default function SettingsPage({user}) {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/auth/delete", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/delete`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

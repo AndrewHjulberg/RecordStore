@@ -17,7 +17,15 @@ import checkoutRoutes, { stripeWebhook } from "./routes/checkout.js";
 const app = express();
 
 // ✅ CORS
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 // ✅ Stripe webhook: must be before express.json()
 app.post("/checkout/webhook", express.raw({ type: "application/json" }), stripeWebhook);
