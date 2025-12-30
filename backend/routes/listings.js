@@ -223,43 +223,63 @@ router.get("/", async (req, res) => {
         decadeMax = base + 9;
       }
     }
+    // Build a unified releaseYear filter to avoid collisions
+  const releaseYearFilter = {};
 
-    const listings = await prisma.listing.findMany({
-      where: {
-        AND: [
-          search
-            ? {
-                OR: [
-                  { title: { contains: search, mode: "insensitive" } },
-                  { artist: { contains: search, mode: "insensitive" } },
-                ],
-              }
-            : {},
+  if (releaseYear) releaseYearFilter.equals = parseInt(releaseYear);
+  if (minYear) releaseYearFilter.gte = parseInt(minYear);
+  if (maxYear) releaseYearFilter.lte = parseInt(maxYear);
+  if (decadeMin) releaseYearFilter.gte = decadeMin;
+  if (decadeMax) releaseYearFilter.lte = decadeMax;
 
-          genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
+  const listings = await prisma.listing.findMany({
+    where: {
+      AND: [
+        // Search filter
+        search
+          ? {
+              OR: [
+                { title: { contains: search, mode: "insensitive" } },
+                { artist: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {},
 
-          // 🎵 Price filters
-          minPrice ? { price: { gte: parseInt(minPrice) } } : {},
-          maxPrice ? { price: { lte: parseInt(maxPrice) } } : {},
+        // Genre filter
+        genre ? { genre: { equals: genre, mode: "insensitive" } } : {},
 
-          // 🌟 Featured + On Sale filters
-          featured !== undefined ? { featured: featured === "true" } : {},
-          onSale !== undefined ? { onSale: onSale === "true" } : {},
+        // Price filters
+        minPrice ? { price: { gte: parseInt(minPrice) } } : {},
+        maxPrice ? { price: { lte: parseInt(maxPrice) } } : {},
 
-          // 🎵 Specific release year
-          releaseYear ? { releaseYear: parseInt(releaseYear) } : {},
+        // Featured / On Sale
+        featured !== undefined ? { featured: featured === "true" } : {},
+        onSale !== undefined ? { onSale: onSale === "true" } : {},
 
-          // 🎵 Direct year range filters
-          minYear ? { releaseYear: { gte: parseInt(minYear) } } : {},
-          maxYear ? { releaseYear: { lte: parseInt(maxYear) } } : {},
+        // Unified release year filter
+        Object.keys(releaseYearFilter).length
+          ? { releaseYear: releaseYearFilter }
+          : {},
 
-          // 📀 Decade filter (1960 → 1960–1969)
-          decadeMin ? { releaseYear: { gte: decadeMin } } : {},
-          decadeMax ? { releaseYear: { lte: decadeMax } } : {},
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        // Exclude listings already in any cart
+        { cartItems: { none: {} } },
+
+        // Exclude listings in active orders (pending or paid)
+        {
+          orderItems: {
+            none: {
+              order: {
+                status: { in: ["pending", "paid"] },
+              },
+            },
+          },
+        },
+      ],
+    },
+
+    // Newest first
+    orderBy: { createdAt: "desc" },
+  });
 
     res.json(listings);
   } catch (err) {
