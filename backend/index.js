@@ -22,6 +22,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://record-store-weld.vercel.app",
+      "https://record-store-andrew-hjulbergs-projects.vercel.app",
     ],
     credentials: true,
   })
