@@ -10,6 +10,7 @@ import { sendOrderConfirmationEmail } from "../utils/email.js";
 const router = express.Router();
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const frontendUrl = process.env.FRONTEND_URL;
 
 
 // --- Create Stripe checkout session handler ---
@@ -53,8 +54,8 @@ export const createCheckoutSession = async (req, res) => {
       shipping_address_collection: {
       allowed_countries: ["US"],
       },
-      success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: "http://localhost:5173/cancel",
+      success_url: `${frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/cancel`,
       metadata: { userId: String(userId), fullName, address, city, state, zip },
     });
 
