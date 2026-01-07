@@ -58,3 +58,20 @@
     transform: scale(0.95);
   }
 }
+
+.navLink, .dropNavLink {
+  text-decoration: none;
+  color: #000;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.navLink:hover, .dropNavLink:hover {
+  font-weight: bold;
+  color: #000;
+}
+
+.dropNavLink {
+  display: block;
+  padding: 8px 15px;
+}

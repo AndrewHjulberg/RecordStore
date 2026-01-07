@@ -13,6 +13,8 @@ import ordersRoutes from "./routes/orders.js";
 import cartsRoutes from "./routes/carts.js";
 import contactRoutes from "./routes/contact.js"
 import checkoutRoutes, { stripeWebhook } from "./routes/checkout.js";
+import adminOrdersRouter from "./routes/adminOrders.js"
+import adminUsersRouter from "./routes/adminUsers.js"
 
 const app = express();
 
@@ -33,7 +35,9 @@ app.post("/checkout/webhook", express.raw({ type: "application/json" }), stripeW
 
 // ✅ Regular JSON parser for everything else
 app.use(express.json());
-
+//Mount admin routers
+app.use("/admin/orders", adminOrdersRouter)
+app.use("/admin/users", adminUsersRouter);
 // ✅ Mount all routers
 app.use("/checkout", checkoutRoutes);
 app.use("/admin", adminRoutes);
@@ -42,6 +46,7 @@ app.use("/auth", authRoutes);
 app.use("/orders", ordersRoutes);
 app.use("/carts", cartsRoutes);
 app.use("/contact", contactRoutes);
+
 
 // ✅ Health check
 app.get("/health", (req, res) => res.json({ status: "ok" }));
