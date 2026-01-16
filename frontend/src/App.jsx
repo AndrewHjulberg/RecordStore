@@ -12,7 +12,10 @@ import Cancel from "./pages/Cancel";
 import Admin from "./pages/Admin";
 import Listing from "./pages/Listing";
 import ProtectedRoute from "./ProtectedRoute";
+import "../src/App.css";
 import React from "react";
+import AdminOrderLookup from "./pages/AdminOrderLookup";
+import AdminUserLookup from "./pages/AdminUserLookup";
 
 import Shop from "./pages/Shop";
 import Settings from "./pages/Settings";
@@ -42,6 +45,7 @@ function App() {
   });
 
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showAdminDropdown, setShowAdminDropdown] = useState(false);
 
   // ⭐ Shared cart state across the app
   const [cartItems, setCartItems] = useState([]);
@@ -74,15 +78,10 @@ function App() {
     setIsLoggedIn(false);
     setUser(null);
     setShowDropdown(false);
+    setShowAdminDropdown(false);
     navigate("/login");
   };
-
-  const linkStyle = {
-    textDecoration: "none",
-    color: "#000",
-    cursor: "pointer",
-  };
-
+  
   return (
     <div style={{ fontFamily: "Arial, sans-serif" }}>
       {/* Nav Bar */}
@@ -115,33 +114,81 @@ function App() {
             alignItems: "center",
           }}
         >
-          <Link to="/" style={linkStyle}>
+          <Link to="/" className="navLink">
             Home
           </Link>
-          <Link to="/shop" style={linkStyle}>
+          <Link to="/shop" className="navLink">
             Shop
           </Link>
 
           {/* Cart always visible */}
-          <Link to="/cart" style={linkStyle}>
+          <Link to="/cart" className="navLink">
             Cart
           </Link>
 
-          <Link to="/about" style={linkStyle}>
+          <Link to="/about" className="navLink">
             About
           </Link>
-          <Link to="/contact" style={linkStyle}>
+          <Link to="/contact" className="navLink">
             Contact
           </Link>
 
-          {user?.isAdmin && <Link to="/admin" style={linkStyle}>Admin</Link>}
+          {user?.isAdmin && ( 
+            <div style={{postion: "relative" }}>
+              <span className="navLink"
+                onMouseOver={() => { setShowAdminDropdown((prev) => !prev )}}
+                onMouseOut={() => { setShowAdminDropdown(false)}}
+              >Admin</span>
+              {showAdminDropdown && (
+                <div
+                  onMouseOver={() => { setShowAdminDropdown(true)}}
+                  onMouseOut={() => { setShowAdminDropdown(false)}}
+                  style={{
+                    position: "absolute",
+                    right: 40,
+                    top: "48px",
+                    background: "#fff",
+                    border: "1px solid #ddd",
+                    padding: "10px 0",
+                    borderRadius: "6px",
+                    width: "150px",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    zIndex: 100,
+                  }}
+                >
+                  <Link
+                    to="/admin"
+                    onClick={() => setShowAdminDropdown(false)}
+                    className="dropNavLink"
+                  >
+                    Add Listing
+                  </Link>
+
+                  <Link
+                    to="/admin/order-lookup"
+                    onClick={() => setShowAdminDropdown(false)}
+                    className="dropNavLink"
+                  >
+                    Order Lookup
+                  </Link>
+                   <Link
+                    to="/admin/users"
+                    onClick={() => setShowAdminDropdown(false)}
+                    className="dropNavLink"
+                  >
+                    Customer Lookup
+                  </Link>
+                </div>
+              )}
+            </div> 
+          )}
 
           {!isLoggedIn && (
             <>
-              <Link to="/login" style={linkStyle}>
+              <Link to="/login" className="navLink">
                 Login
               </Link>
-              <Link to="/signup" style={linkStyle}>
+              <Link to="/signup" className="navLink">
                 Create Account
               </Link>
             </>
@@ -283,6 +330,8 @@ function App() {
           }
         />
         <Route path="/listings/:id" element={<ProtectedRoute adminOnly={true}><Listing user={user} /></ProtectedRoute>} />
+        <Route path="/admin/order-lookup" element={<ProtectedRoute adminOnly={true}><AdminOrderLookup/></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute adminOnly={true}><AdminUserLookup /></ProtectedRoute>} />
       </Routes>
     </div>
   );

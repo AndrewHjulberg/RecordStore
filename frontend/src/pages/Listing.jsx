@@ -96,8 +96,10 @@ export default function Listing({ user }) {
                 setPrice(data.price || "");
                 setCondition(data.condition || "");
                 setImageUrl(data.imageUrl || "");
-                setFeatured(data.featured || false);
-                setOnSale(data.onSale || false);
+                console.log("RAW FEATURED:", data.featured, typeof data.featured);
+                console.log("RAW ONSALE:", data.onSale, typeof data.onSale);
+                setFeatured(data.featured === true || data.featured === "true");
+                setOnSale(data.onSale === true || data.onSale === "true");
                 setSalePrice(data.salePrice || "");
                 setUpc(data.upc || "");
             })

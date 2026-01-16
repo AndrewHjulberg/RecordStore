@@ -1,31 +1,11 @@
 // routes/listings.js
 import express from "express";
 import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
+import requireAdmin from "../middleware/requireAdmin.js";
 import multer from "multer";
-
 const router = express.Router();
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
 
-// ✅ Middleware to check admin
-function requireAdmin(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "No token provided" });
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded.isAdmin) {
-      return res.status(403).json({ error: "Not authorized" });
-    }
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(403).json({ error: "Invalid token" });
-  }
-}
-
-// Multer middleware for photo upload
 const storage = multer.memoryStorage();
 const upload = multer({storage});
 
@@ -44,6 +24,7 @@ router.get("/discogs", async (req, res) => {
     res.status(500).json({error: err.message});
   }
 });
+
 
 // ✅ POST route to add a listing (INT-friendly)
 router.post("/", requireAdmin, upload.fields([{name: "photo_front"},{name: "photo_back"}]), async (req, res) => {
